@@ -4,22 +4,23 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 // Providers
-import 'providers/device_provider.dart';
-import 'providers/job_provider.dart';
-import 'providers/chat_provider.dart';
-import 'providers/user_provider.dart';
+import 'package:smart_elec/providers/device_provider.dart';
+import 'package:smart_elec/providers/job_provider.dart';
+import 'package:smart_elec/providers/chat_provider.dart';
+import 'package:smart_elec/providers/user_provider.dart';
 
 // Screens
-import 'Screens/splash.dart';
-import 'Screens/login_screen.dart';
-import 'Screens/register_screen.dart';
-import 'Screens/main_screen.dart';
-import 'Screens_Technic/job_board_screen.dart';
-import 'Screens_Technic/technician_main_screen.dart';
-import 'Screens_Technic/chat_screen.dart';
-import 'Screens_Technic/job_detail_screen.dart';
+import 'package:smart_elec/Screens/splash.dart';
+import 'package:smart_elec/Screens/login_screen.dart';
+import 'package:smart_elec/Screens/set_password_screen.dart';
+import 'package:smart_elec/Screens/register_screen.dart';
+import 'package:smart_elec/Screens/main_screen.dart';
+import 'package:smart_elec/Screens_Technic/job_board_screen.dart';
+import 'package:smart_elec/Screens_Technic/technician_main_screen.dart';
+import 'package:smart_elec/Screens_Technic/chat_screen.dart';
+import 'package:smart_elec/Screens_Technic/job_detail_screen.dart';
 
-import 'services/notification_service.dart';
+import 'package:smart_elec/services/notification_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -91,6 +92,8 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const LoginScreen());
           case '/register':
             return MaterialPageRoute(builder: (_) => const RegisterScreen());
+          case '/set_password':
+            return MaterialPageRoute(builder: (_) => const SetPasswordScreen());
           case '/main':
             return MaterialPageRoute(builder: (_) => const MainScreen());
           case '/tech_main':

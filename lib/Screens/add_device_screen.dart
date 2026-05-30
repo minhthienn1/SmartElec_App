@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/device_provider.dart';
-import '../models/device.dart';
-import '../Widgets/custom_loading_button.dart';
+import 'package:smart_elec/providers/device_provider.dart';
+import 'package:smart_elec/models/device.dart';
+import 'package:smart_elec/Widgets/custom_loading_button.dart';
 
 // ─── Design Tokens (Đồng bộ với HomeScreen) ──────────────────────
 const _kBgColor = Color(0xff081125);

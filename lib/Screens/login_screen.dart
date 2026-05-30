@@ -5,6 +5,8 @@ import 'package:smart_elec/services/secure_storage_service.dart';
 import 'package:smart_elec/providers/user_provider.dart';
 import '../services/api_service.dart';
 import '../services/chat_socket_service.dart';
+import '../services/zalo_auth_service.dart';
+import '../services/google_auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -184,6 +186,106 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+  void _handleZaloLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      final result = await ZaloAuthService.loginWithZalo();
+      
+      if (result['access_token'] != null) {
+        String token = result['access_token'];
+        await _secureStorage.saveAccessToken(token);
+        
+        if (mounted) {
+          try {
+            await Provider.of<UserProvider>(context, listen: false).fetchProfile();
+            ChatSocketService().connect(null);
+          } catch (e) {
+            await _secureStorage.clearAll();
+            rethrow;
+          }
+        }
+        
+        try {
+          final fcmToken = await FirebaseMessaging.instance.getToken();
+          if (fcmToken != null) {
+            await ApiService.updateFcmToken(fcmToken, jwtToken: token);
+          }
+        } catch (e) {
+          debugPrint("Lỗi cập nhật FCM sau Zalo login: $e");
+        }
+
+        if (!mounted) return;
+        _showSnackBar(result['message'] ?? "⚡ ĐÃ KẾT NỐI HỆ THỐNG", kPrimaryCyan);
+        
+        Future.delayed(const Duration(milliseconds: 800), () {
+          if (result['needsPassword'] == true) {
+             Navigator.pushReplacementNamed(context, '/set_password');
+          } else {
+             Navigator.pushReplacementNamed(context, '/main');
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar(e.toString().replaceAll('Exception: ', ''), kErrorRed);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _handleGoogleLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      final result = await GoogleAuthService.loginWithGoogle();
+      
+      if (result['access_token'] != null) {
+        String token = result['access_token'];
+        await _secureStorage.saveAccessToken(token);
+        
+        if (mounted) {
+          try {
+            await Provider.of<UserProvider>(context, listen: false).fetchProfile();
+            ChatSocketService().connect(null);
+          } catch (e) {
+            await _secureStorage.clearAll();
+            rethrow;
+          }
+        }
+        
+        try {
+          final fcmToken = await FirebaseMessaging.instance.getToken();
+          if (fcmToken != null) {
+            await ApiService.updateFcmToken(fcmToken, jwtToken: token);
+          }
+        } catch (e) {
+          debugPrint("Lỗi cập nhật FCM sau Google login: $e");
+        }
+
+        if (!mounted) return;
+        _showSnackBar(result['message'] ?? "⚡ ĐÃ KẾT NỐI HỆ THỐNG", kPrimaryCyan);
+        
+        Future.delayed(const Duration(milliseconds: 800), () {
+          if (result['needsPassword'] == true) {
+             Navigator.pushReplacementNamed(context, '/set_password');
+          } else {
+             Navigator.pushReplacementNamed(context, '/main');
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar(e.toString().replaceAll('Exception: ', ''), kErrorRed);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   void _showSnackBar(String msg, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -263,6 +365,9 @@ class _LoginScreenState extends State<LoginScreen>
 
                               const SizedBox(height: 54),
                               _buildMainButton("ĐĂNG NHẬP"),
+
+                              const SizedBox(height: 32),
+                              _buildSocialLogins(),
 
                               const Spacer(),
 
@@ -601,6 +706,93 @@ class _LoginScreenState extends State<LoginScreen>
               style: TextStyle(
                 color: kSecondaryGreen,
                 fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSocialLogins() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(child: Divider(color: Colors.white.withOpacity(0.1), thickness: 1)),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                "Hoặc đăng nhập bằng",
+                style: TextStyle(color: kTextSecondary, fontSize: 13),
+              ),
+            ),
+            Expanded(child: Divider(color: Colors.white.withOpacity(0.1), thickness: 1)),
+          ],
+        ),
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: _buildSocialButton(
+                iconPath: 'assets/zalo_icon.png',
+                label: 'Zalo',
+                color: const Color(0xFF0068FF),
+                onTap: _handleZaloLogin,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildSocialButton(
+                iconPath: 'assets/google_icon.png',
+                label: 'Google',
+                color: Colors.white,
+                textColor: Colors.black87,
+                onTap: _handleGoogleLogin,
+              ),
+            ),
+          ],
+        )
+      ],
+    );
+  }
+
+  Widget _buildSocialButton({
+    required String iconPath,
+    required String label,
+    required Color color,
+    Color textColor = Colors.white,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: _isLoading ? null : onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(iconPath, width: 24, height: 24, errorBuilder: (context, error, stackTrace) => Icon(Icons.account_circle, size: 24, color: textColor)),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
               ),
             ),
           ],

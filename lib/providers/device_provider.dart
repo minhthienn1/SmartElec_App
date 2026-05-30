@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/device.dart';
-import '../services/api_service.dart';
-import '../services/notification_service.dart';
+import 'package:smart_elec/models/device.dart';
+import 'package:smart_elec/services/api_service.dart';
+import 'package:smart_elec/services/notification_service.dart';
 
 class DeviceProvider extends ChangeNotifier {
   List<Device> _devices = [];
