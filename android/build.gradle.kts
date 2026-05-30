@@ -2,6 +2,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://gitlab.com/api/v4/projects/50747855/packages/maven") }
     }
 }
 

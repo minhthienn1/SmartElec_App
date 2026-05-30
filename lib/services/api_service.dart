@@ -14,8 +14,8 @@ import '../models/repair_case.dart';
 import '../models/chat_session.dart';
 
 class ApiService {
-  // Đọc baseUrl từ file .env, fallback về http://127.0.0.1:3000
-  static String get baseUrl => dotenv.env['API_URL'] ?? 'http://127.0.0.1:3000';
+  // Đọc baseUrl từ file .env, fallback về http://192.168.1.120:3000
+  static String get baseUrl => dotenv.env['API_URL'] ?? 'http://192.168.1.186:3000';
   static const _storage = FlutterSecureStorage();
   // Instance dùng chung trong class, không cần khởi tạo lại mỗi lần gọi
   static final _secureStorage = SecureStorageService();
@@ -263,6 +263,83 @@ class ApiService {
       throw Exception(e.toString().replaceAll('Exception: ', ''));
     }
   }
+
+  static Future<Map<String, dynamic>> zaloLogin({
+    required String zaloId,
+    String? name,
+    String? avatarUrl,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/zalo-login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'zaloId': zaloId,
+          'name': name,
+          'avatarUrl': avatarUrl,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      final responseBody = jsonDecode(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception(responseBody['message'] ?? 'Đăng nhập Zalo thất bại từ máy chủ');
+      }
+      return responseBody as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint("❌ Lỗi ApiService Zalo Login: $e");
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
+  static Future<Map<String, dynamic>> googleLogin({
+    required String idToken,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/google-login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'idToken': idToken,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      final responseBody = jsonDecode(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception(responseBody['message'] ?? 'Đăng nhập Google thất bại từ máy chủ');
+      }
+      return responseBody as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint("❌ Lỗi ApiService Google Login: $e");
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
+  static Future<Map<String, dynamic>> setPasswordForZalo(
+    String phoneNumber,
+    String newPassword,
+  ) async {
+    final headers = await _getHeaders();
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/set-password'),
+        headers: headers,
+        body: jsonEncode({
+          'phoneNumber': phoneNumber,
+          'newPassword': newPassword,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      final responseBody = jsonDecode(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception(responseBody['message'] ?? 'Cài đặt mật khẩu thất bại');
+      }
+      return responseBody as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint("❌ Lỗi ApiService Set Password: $e");
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
 
   // ─────────────────────────────────────────────────────────────────
   // CHAT HISTORY APIs (cần JWT token)

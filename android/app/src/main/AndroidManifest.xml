@@ -8,7 +8,7 @@
 
     <application
         android:label="smart_elec"
-        android:name="${applicationName}"
+        android:name="com.zing.zalo.zalosdk.oauth.ZaloSDKApplication"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
         <activity
@@ -43,6 +43,11 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@mipmap/ic_launcher" />
+
+        <!-- Zalo App ID -->
+        <meta-data
+            android:name="com.zing.zalo.zalosdk.appID"
+            android:value="537648362755658623" />
             
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
