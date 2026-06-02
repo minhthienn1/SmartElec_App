@@ -58,6 +58,7 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint("🛠️ KIỂM TRA SĐT THỢ: ${widget.receiver.phoneNumber}");
     _initChat();
   }
 
@@ -612,59 +613,66 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
       elevation: 0.5,
       iconTheme: const IconThemeData(color: Colors.white),
       titleSpacing: 0,
-      title: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: primaryOrange.withOpacity(0.1),
-            backgroundImage: widget.receiver.avatarUrl != null
-                ? NetworkImage(widget.receiver.avatarUrl!)
-                : null,
-            child: widget.receiver.avatarUrl == null
-                ? Text(
-                    widget.receiver.fullName.substring(0, 1).toUpperCase(),
-                    style: TextStyle(
-                      color: primaryOrange,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  )
-                : null,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        widget.receiver.fullName,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
+      title: InkWell(
+        onTap: _showTechnicianInfoDialog, // Kích hoạt Dialog hiển thị thông tin khi nhấn vào thanh AppBar
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: primaryOrange.withOpacity(0.1),
+                backgroundImage: widget.receiver.avatarUrl != null
+                    ? NetworkImage(widget.receiver.avatarUrl!)
+                    : null,
+                child: widget.receiver.avatarUrl == null
+                    ? Text(
+                        widget.receiver.fullName.substring(0, 1).toUpperCase(),
+                        style: TextStyle(
+                          color: primaryOrange,
                           fontWeight: FontWeight.bold,
                         ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            widget.receiver.fullName,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildStatusBadge(),
+                      ],
+                    ),
+                    Text(
+                      _connectionStatus,
+                      style: TextStyle(
+                        color: _connectionStatus == 'Đã kết nối'
+                            ? Colors.green
+                            : Colors.grey,
+                        fontSize: 12,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    _buildStatusBadge(),
                   ],
                 ),
-                Text(
-                  _connectionStatus,
-                  style: TextStyle(
-                    color: _connectionStatus == 'Đã kết nối'
-                        ? Colors.green
-                        : Colors.grey,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
       actions: [
         PopupMenuButton<String>(
@@ -703,10 +711,8 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
             if (_sessionStatus == JobStatus.matched)
               PopupMenuItem(
                 value: 'redispatch',
-                enabled:
-                    _sessionUpdatedAt == null ||
-                    DateTime.now().difference(_sessionUpdatedAt!).inMinutes >=
-                        15,
+                enabled: _sessionUpdatedAt == null ||
+                    DateTime.now().difference(_sessionUpdatedAt!).inMinutes >= 15,
                 child: const Row(
                   children: [
                     Icon(
@@ -1321,6 +1327,100 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
           ],
         ),
       ),
+    );
+  }
+  // Hàm hiển thị Dialog thông tin chi tiết của người thợ
+  void _showTechnicianInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xff0e1938), // Đồng bộ với màu nền AppBar của bạn
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: primaryOrange.withOpacity(0.3), width: 1),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.engineering_rounded, color: primaryOrange, size: 24),
+              const SizedBox(width: 10),
+              const Text(
+                'Thông tin thợ sửa chữa',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDialogInfoRow(Icons.person, widget.receiver.fullName),
+              const SizedBox(height: 12),
+              _buildDialogInfoRow(
+                Icons.phone,  
+                widget.receiver.phoneNumber ?? 'Chưa cập nhật số điện thoại'
+              ),
+              const SizedBox(height: 12),
+              _buildDialogInfoRow(Icons.assignment_turned_in_rounded, '45 đơn hàng (Gán cứng)'),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Icon(Icons.star_rounded, color: Colors.amber, size: 20),
+                  const SizedBox(width: 10),
+                  RichText(
+                    text: const TextSpan(
+                      style: TextStyle(color: Colors.white, fontSize: 14),
+                      children: [
+                        TextSpan(
+                          text: '4.8 / 5.0 (Gán cứng)',
+                          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.amber),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: primaryOrange,
+              ),
+              child: const Text('Đóng', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Hàm helper để render nhanh các hàng thông tin có Icon trong Dialog
+  Widget _buildDialogInfoRow(IconData icon, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: Colors.grey, size: 20),
+        const SizedBox(width: 10),
+        Expanded(
+          child: RichText(
+            text: TextSpan(
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+              children: [
+                TextSpan(text: value, style: const TextStyle(fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
