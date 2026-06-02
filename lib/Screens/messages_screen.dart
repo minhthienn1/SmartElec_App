@@ -252,21 +252,25 @@ class MessagesScreenState extends State<MessagesScreen> {
             ],
           ),
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MessengerChatScreen(
-                  sessionId: session.id,
-                  receiver: model.User(
-                    id: otherUser.id,
-                    fullName: otherUser.fullName ?? "Người dùng",
-                    role: otherUser.role,
-                    avatarUrl: otherUser.avatarUrl,
-                  ),
+          // 1. Đặt debugPrint ở ngay đây (trước khi Navigator.push)
+          debugPrint("🛠️ SĐT TỪ BẢN GHI TRƯỚC KHI CHUYỂN TRANG: ${otherUser.phoneNumber}");
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MessengerChatScreen(
+                sessionId: session.id,
+                receiver: model.User(
+                  id: otherUser.id,
+                  fullName: otherUser.fullName ?? "Người dùng",
+                  role: otherUser.role,
+                  avatarUrl: otherUser.avatarUrl,
+                  // 2. 👉 THÊM DÒNG NÀY VÀO LÀ SỬA ĐƯỢC LỖI:
+                  phoneNumber: otherUser.phoneNumber ?? "", 
                 ),
               ),
-            ).then((_) => _loadInitialData());
-          },
+            ),
+          ).then((_) => _loadInitialData());
+        },
         );
       },
     );
