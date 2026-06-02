@@ -4,8 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'api_service.dart';
 
 class GoogleAuthService {
-  // Thay thế bằng Web Client ID lấy từ file google-services.json hoặc Firebase Console
-  static const String _serverClientId = '935621407913-j2del6tagfo4dnapioudgvgai3kjd0hs.apps.googleusercontent.com';
+  // Thay thế bằng Web Client ID lấy từ file google-services.json (client_type: 3)
+  static const String _serverClientId =
+      '930935404216-cmi1b92m338plcit14c879lm0vul62ba.apps.googleusercontent.com';
 
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
     serverClientId: _serverClientId,
@@ -18,7 +19,7 @@ class GoogleAuthService {
   static Future<Map<String, dynamic>> loginWithGoogle() async {
     try {
       debugPrint("Bắt đầu Google Auth Flow...");
-      
+
       // 1. Kích hoạt luồng đăng nhập Google
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
@@ -26,10 +27,11 @@ class GoogleAuthService {
       }
 
       // 2. Lấy thông tin xác thực từ request
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       if (googleAuth.accessToken == null || googleAuth.idToken == null) {
-         throw Exception("Không thể lấy token xác thực từ Google");
+        throw Exception("Không thể lấy token xác thực từ Google");
       }
 
       // 3. Tạo credential cho Firebase
@@ -40,7 +42,9 @@ class GoogleAuthService {
 
       // 4. Đăng nhập vào Firebase bằng credential
       debugPrint("Đăng nhập Firebase Auth...");
-      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+      final UserCredential userCredential = await _auth.signInWithCredential(
+        credential,
+      );
       final User? firebaseUser = userCredential.user;
 
       if (firebaseUser == null) {
@@ -52,7 +56,7 @@ class GoogleAuthService {
       final String? idToken = await firebaseUser.getIdToken();
 
       if (idToken == null) {
-         throw Exception("Không lấy được Firebase ID Token");
+        throw Exception("Không lấy được Firebase ID Token");
       }
 
       // 6. Gửi ID Token lên Backend của chúng ta

@@ -84,5 +84,7 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="http" />
         </intent>
+        <!-- Thêm dòng này để SDK Zalo có thể check và mở app Zalo (Android 11+) -->
+        <package android:name="com.zing.zalo" />
     </queries>
 </manifest>
