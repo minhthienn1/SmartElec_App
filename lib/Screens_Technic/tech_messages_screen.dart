@@ -237,35 +237,26 @@ class TechMessagesScreenState extends State<TechMessagesScreen> {
                               Text(
                                 lastMsg != null
                                     ? DateFormat('HH:mm').format(
-                                        DateTime.parse(
-                                          lastMsg['createdAt'],
-                                        ).toLocal(),
+                                        DateTime.parse(lastMsg['createdAt']).toLocal(),
                                       )
                                     : "",
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isUnread
-                                      ? Colors.blueAccent
-                                      : Colors.grey,
-                                  fontWeight: isUnread
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
+                                  color: isUnread ? Colors.blueAccent : Colors.grey,
+                                  fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              if (session['status'] == 'MATCHED')
+                              if (session['status'] != null && session['status'] != 'PENDING')
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: Colors.green[100],
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: const Text(
-                                    "Đang sửa",
-                                    style: TextStyle(
+                                  child: Text(
+                                    _getStatusLabel(session['status']), 
+                                    style: const TextStyle(
                                       color: Colors.green,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
@@ -274,8 +265,8 @@ class TechMessagesScreenState extends State<TechMessagesScreen> {
                                 ),
                             ],
                           ),
-                          onTap: () {
-                            Navigator.push(
+                          onTap: () async {
+                            final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => TechChatScreen(
@@ -285,10 +276,12 @@ class TechMessagesScreenState extends State<TechMessagesScreen> {
                                     fullName: customer['fullName'],
                                     avatarUrl: customer['avatarUrl'],
                                     role: 'USER',
+                                    phoneNumber: customer['phoneNumber'] ?? "",
                                   ),
                                 ),
                               ),
-                            ).then((_) => _fetchSessions());
+                            );
+                            _fetchSessions();
                           },
                         );
                       },
@@ -322,5 +315,24 @@ class TechMessagesScreenState extends State<TechMessagesScreen> {
     if (type == 'QUOTE_CARD') return "[Báo giá]";
 
     return msg['content'] ?? "";
+  }
+
+  String _getStatusLabel(String status) {
+    switch (status) {
+      case 'MATCHED':
+        return "Mới nhận";
+      case 'ARRIVING':
+        return "Đang tới";
+      case 'ARRIVED':
+        return "Đã tới nơi";
+      case 'QUOTING':
+        return "Chờ duyệt giá";
+      case 'REPAIRING':
+        return "Đang sửa";
+      case 'COMPLETED':
+        return "Hoàn thành";
+      default:
+        return status;
+    }
   }
 }
