@@ -284,7 +284,10 @@ class _TechChatScreenState extends State<TechChatScreen> {
                   ],
                 ),
               ),
-            _buildBottomInput(),
+            _buildStateActionBanner(),
+            // Nếu đơn đã xong/hủy thì ẩn luôn cả khung nhập chat, nếu chưa thì hiện
+            if (_sessionStatus != JobStatus.completed && _sessionStatus != JobStatus.cancelled)
+              _buildBottomInput(),
           ],
         ),
       ),
@@ -405,52 +408,6 @@ class _TechChatScreenState extends State<TechChatScreen> {
           onSelected: (value) async {
             if (value == 'call') {
               _handleCallCustomer();
-            } else if (value == 'start_moving') {
-              if (_isProcessing) return;
-              setState(() => _isProcessing = true);
-              try {
-                await ApiService.startEnRoute(widget.sessionId);
-                if (mounted) {
-                  setState(() {
-                    _sessionStatus = JobStatus.enRoute;
-                    _isProcessing = false;
-                  });
-                }
-              } catch (e) {
-                if (mounted) {
-                  setState(() => _isProcessing = false);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("❌ Lỗi mạng: $e"),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            } else if (value == 'confirm_arrival') {
-              if (_isProcessing) return;
-              setState(() => _isProcessing = true);
-              try {
-                await ApiService.confirmArrival(widget.sessionId);
-                if (mounted) {
-                  setState(() {
-                    _sessionStatus = JobStatus.arrived;
-                    _isProcessing = false;
-                  });
-                }
-              } catch (e) {
-                if (mounted) {
-                  setState(() => _isProcessing = false);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("❌ Lỗi mạng: $e"),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            } else if (value == 'complete') {
-              _showCompleteJobDialog();
             } else if (value == 'cancel') {
               _handleCancelJob();
             }
@@ -466,42 +423,10 @@ class _TechChatScreenState extends State<TechChatScreen> {
                 ],
               ),
             ),
-            if (_sessionStatus == JobStatus.matched)
-              const PopupMenuItem(
-                value: 'start_moving',
-                child: Row(
-                  children: [
-                    Icon(Icons.directions_car, color: Colors.orange, size: 20),
-                    SizedBox(width: 8),
-                    Text('Bắt đầu di chuyển'),
-                  ],
-                ),
-              ),
-            if (_sessionStatus == JobStatus.enRoute)
-              const PopupMenuItem(
-                value: 'confirm_arrival',
-                child: Row(
-                  children: [
-                    Icon(Icons.location_on, color: Colors.blue, size: 20),
-                    SizedBox(width: 8),
-                    Text('Đã đến nơi'),
-                  ],
-                ),
-              ),
-            if (_sessionStatus == JobStatus.inProgress)
-              const PopupMenuItem(
-                value: 'complete',
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.green, size: 20),
-                    SizedBox(width: 8),
-                    Text('Hoàn thành công việc'),
-                  ],
-                ),
-              ),
             if (_sessionStatus == JobStatus.matched ||
                 _sessionStatus == JobStatus.enRoute ||
-                _sessionStatus == JobStatus.inProgress)
+                _sessionStatus == JobStatus.inProgress ||
+                _sessionStatus == JobStatus.arrived)
               const PopupMenuItem(
                 value: 'cancel',
                 child: Row(
@@ -509,7 +434,7 @@ class _TechChatScreenState extends State<TechChatScreen> {
                     Icon(Icons.cancel_outlined, color: Colors.red, size: 20),
                     SizedBox(width: 8),
                     Text(
-                      'Hủy đơn hàng (Từ bỏ)',
+                      'Hủy đơn',
                       style: TextStyle(color: Colors.red),
                     ),
                   ],
@@ -560,49 +485,53 @@ class _TechChatScreenState extends State<TechChatScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Xác nhận hoàn thành"),
+        backgroundColor: const Color(0xff1A244D),
+        title: const Text('Xác nhận hoàn thành', style: TextStyle(color: Colors.white)),
         content: const Text(
-          "Bạn đã hoàn thành công việc và muốn kết thúc đơn hàng này chứ?",
+          'Bạn có chắc chắn đã sửa chữa xong và muốn hoàn thành công việc này?',
+          style: TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Hủy"),
+            onPressed: () => Navigator.pop(context), // Đóng dialog
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
             onPressed: () async {
+              Navigator.pop(context); // 1. Đóng hộp thoại xác nhận ngay lập tức
+              
               if (_isProcessing) return;
-              Navigator.pop(context);
               setState(() => _isProcessing = true);
+              
               try {
+                // 2. Gọi API hoàn thành công việc
                 await ApiService.completeJob(widget.sessionId);
+                
                 if (mounted) {
-                  setState(() => _isProcessing = false);
+                  // 3. Thông báo thành công nhanh
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text("🎉 Đã xác nhận hoàn thành đơn hàng!"),
+                      content: Text('✅ Đã hoàn thành công việc!'),
                       backgroundColor: Colors.green,
+                      duration: Duration(seconds: 2),
                     ),
                   );
-                  Navigator.pop(context); // Quay về danh sách đơn
+                  
+                  // 4. ĐÁ RA NGOÀI NGAY LẬP TỨC (Không dùng Future.delayed nữa)
+                  // Truyền kèm giá trị 'true' để báo hiệu cho màn hình ngoài biết là đã đổi trạng thái
+                  Navigator.pop(context, true); 
                 }
               } catch (e) {
                 if (mounted) {
                   setState(() => _isProcessing = false);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("❌ Lỗi mạng: $e"),
-                      backgroundColor: Colors.red,
-                    ),
+                    SnackBar(content: Text('❌ Lỗi: $e'), backgroundColor: Colors.red),
                   );
                 }
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text(
-              "Xác nhận",
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Hoàn thành', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -858,6 +787,157 @@ class _TechChatScreenState extends State<TechChatScreen> {
     );
   }
 
+  // 1. Hàm kiểm tra trạng thái báo giá mới nhất
+  String? _getLatestQuoteStatus() {
+    try {
+      // Tìm tất cả tin nhắn báo giá
+      final quotes = _messages.where((m) => m.type == MessageType.QUOTE_CARD).toList();
+      if (quotes.isEmpty) return null;
+      // Do _messages đang sort reverse (tin mới nhất ở index 0), ta lấy phần tử đầu tiên
+      final latestQuote = quotes.first;
+      return latestQuote.metadata?['quoteStatus']; // Trả về 'ACCEPTED', 'REJECTED', hoặc null
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // 2. Hàm gọi API chuyển trạng thái sang Đang sửa (IN_PROGRESS)
+  void _handleStartRepair() async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+    try {
+      // Bạn cần viết thêm hàm startRepair này trong ApiService nhé
+      await ApiService.startRepair(widget.sessionId); 
+      if (mounted) {
+        setState(() {
+          _sessionStatus = JobStatus.inProgress;
+          _isProcessing = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("❌ Lỗi mạng: $e"), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  // 3. Thanh điều hướng trạng thái động (Trái tim của tính năng này)
+  Widget _buildStateActionBanner() {
+    if (_sessionStatus == JobStatus.completed || _sessionStatus == JobStatus.cancelled) {
+      return const SizedBox.shrink(); // Ẩn nút nếu đã xong hoặc hủy
+    }
+
+    String buttonText = "";
+    IconData buttonIcon = Icons.arrow_forward;
+    Color buttonColor = primaryBlue;
+    VoidCallback? onPressed;
+
+    final latestQuoteStatus = _getLatestQuoteStatus();
+
+    switch (_sessionStatus) {
+      case JobStatus.matched:
+        buttonText = "BẮT ĐẦU DI CHUYỂN TỚI KHÁCH";
+        buttonIcon = Icons.directions_car;
+        buttonColor = Colors.orange[700]!;
+        onPressed = () async {
+          if (_isProcessing) return;
+          setState(() => _isProcessing = true);
+          try {
+            await ApiService.startEnRoute(widget.sessionId);
+            if (mounted) setState(() { _sessionStatus = JobStatus.enRoute; _isProcessing = false; });
+          } catch (e) {
+            if (mounted) setState(() => _isProcessing = false);
+          }
+        };
+        break;
+
+      case JobStatus.enRoute:
+        buttonText = "XÁC NHẬN ĐÃ TỚI NƠI";
+        buttonIcon = Icons.location_on;
+        buttonColor = Colors.blue[700]!;
+        onPressed = () async {
+          if (_isProcessing) return;
+          setState(() => _isProcessing = true);
+          try {
+            await ApiService.confirmArrival(widget.sessionId);
+            if (mounted) setState(() { _sessionStatus = JobStatus.arrived; _isProcessing = false; });
+          } catch (e) {
+            if (mounted) setState(() => _isProcessing = false);
+          }
+        };
+        break;
+
+      case JobStatus.arrived:
+        // Logic ưu tiên hàng đầu theo trạng thái báo giá
+        if (latestQuoteStatus == null) {
+          buttonText = "TẠO VÀ GỬI BÁO GIÁ";
+          buttonIcon = Icons.request_quote;
+          buttonColor = Colors.teal[600]!;
+          onPressed = _showQuoteForm;
+        } else if (latestQuoteStatus == 'REJECTED') {
+          buttonText = "KHÁCH TỪ CHỐI - BÁO GIÁ LẠI";
+          buttonIcon = Icons.refresh;
+          buttonColor = Colors.red[600]!;
+          onPressed = _showQuoteForm;
+        } else if (latestQuoteStatus == 'ACCEPTED') {
+          buttonText = "BẮT ĐẦU SỬA CHỮA";
+          buttonIcon = Icons.build_circle;
+          buttonColor = Colors.purple[600]!;
+          onPressed = _handleStartRepair; // Đã thêm hàm này ở trên
+        } else {
+          // Trạng thái chờ khách duyệt
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            color: Colors.orange.withOpacity(0.1),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.orange)),
+                SizedBox(width: 10),
+                Text("Đang chờ khách duyệt báo giá...", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          );
+        }
+        break;
+
+      case JobStatus.inProgress:
+        buttonText = "HOÀN THÀNH CÔNG VIỆC";
+        buttonIcon = Icons.check_circle;
+        buttonColor = Colors.green[700]!;
+        onPressed = _showCompleteJobDialog;
+        break;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: const BoxDecoration(
+        color: Color(0xff0e1938),
+        border: Border(bottom: BorderSide(color: Colors.white12, width: 1)),
+      ),
+      child: ElevatedButton.icon(
+        onPressed: _isProcessing ? null : onPressed,
+        icon: _isProcessing 
+          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+          : Icon(buttonIcon, color: Colors.white),
+        label: Text(
+          buttonText,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: buttonColor,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomInput() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -916,14 +996,6 @@ class _TechChatScreenState extends State<TechChatScreen> {
               leading: const Icon(Icons.photo, color: Colors.green),
               title: const Text("Thư viện ảnh"),
               onTap: () => _handlePickImage(ImageSource.gallery),
-            ),
-            ListTile(
-              leading: const Icon(Icons.description, color: Colors.orange),
-              title: const Text("Gửi Báo Giá"),
-              onTap: () {
-                Navigator.pop(context);
-                _showQuoteForm();
-              },
             ),
             const SizedBox(height: 20),
           ],

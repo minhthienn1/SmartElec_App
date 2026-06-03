@@ -570,6 +570,19 @@ class ApiService {
     }
   }
 
+  static Future<void> startRepair(int sessionId) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/chats/technician/jobs/$sessionId/start-repair'),
+      headers: headers,
+    );
+    
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['message'] ?? 'Không thể bắt đầu sửa chữa. Vui lòng thử lại.');
+    }
+  }
+
   /// Thợ chủ động hủy đơn (Từ bỏ - Dùng cho Thợ)
   static Future<void> cancelJobTech(int sessionId) async {
     final headers = await _getHeaders();
