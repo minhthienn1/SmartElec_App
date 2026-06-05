@@ -380,10 +380,6 @@ class ApiService {
     );
   }
 
-  /// Lấy toàn bộ lịch sử chẩn đoán của user đang đăng nhập.
-  /// Gọi API: GET /chats/history
-  /// Tự động map JSON từ chuẩn Prisma (deviceType, aiSummary, id: int)
-  /// sang model [RepairCase] của Flutter (title, summary, id: String).
   static Future<List<RepairCase>> getHistory() async {
     final headers = await _getHeaders();
     final response = _handleResponse(
@@ -403,16 +399,20 @@ class ApiService {
 
     return jsonList.map((item) {
       final map = item as Map<String, dynamic>;
+
+      debugPrint("====================================");
+      debugPrint("👉 ITEM DATA: \n${map.toString()}");
+
       return RepairCase(
-        // Ép kiểu id từ int (Prisma/PostgreSQL) sang String (Flutter model)
         id: map['id'].toString(),
-        // Mapping: Prisma `deviceType` → Flutter `title`
         title: map['deviceType'] as String? ?? 'Chưa rõ thiết bị',
-        // Mapping: Prisma `createdAt` ISO string → Flutter DateTime
-        date: DateTime.parse(map['createdAt'] as String),
-        // Mapping: Prisma `aiSummary` → Flutter `summary`
-        summary:
-            (map['symptom'] as String?) ?? (map['aiSummary'] as String?) ?? '',
+        date: DateTime.parse(map['createdAt'] as String).toLocal(),
+        // Trả lại đúng bản chất: summary là tóm tắt chẩn đoán của AI
+        summary: map['aiSummary'] as String? ?? '', 
+        // ➕ Lấy trạng thái từ phòng chat (NestJS gửi về) gán vào model
+        status: map['status'] as String? ?? 'UNDER_DIAGNOSIS', 
+        // ➕ Lấy triệu chứng ban đầu khách nhập gán vào model
+        symptom: map['symptom'] as String? ?? '', 
       );
     }).toList();
   }
@@ -902,6 +902,24 @@ class ApiService {
     } catch (e) {
       debugPrint('❌ ApiService Error (toggleOnline): $e');
       return null;
+    }
+  }
+
+  static Future<bool> deleteChatSession(int sessionId) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.delete(
+        Uri.parse('$baseUrl/chats/sessions/$sessionId'), // Đường dẫn khớp với Controller BE
+        headers: headers,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint("❌ Lỗi deleteChatSession: $e");
+      return false;
     }
   }
 }

@@ -31,19 +31,21 @@ class ChatMessage {
   ChatMessage({
     required this.text,
     required this.isUser,
+    DateTime? timestamp,
     this.imageBytes,
     this.state,
     this.sessionId,
     this.logId,
     this.feedback,
-  }) : timestamp = DateTime.now();
+  }) : timestamp = timestamp ?? DateTime.now();
 }
 
 class ChatScreen extends StatefulWidget {
   final String? initialDevice;
   final String? initialQuery;
+  final int? sessionId;
 
-  const ChatScreen({super.key, this.initialDevice, this.initialQuery});
+  const ChatScreen({super.key, this.initialDevice, this.initialQuery, this.sessionId});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -72,26 +74,68 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _initSpeech();
+    
+    // ➕ Gán sessionId truyền từ Home sang biến nội bộ của ChatScreen
+    _currentSessionId = widget.sessionId;
 
-    if (widget.initialDevice != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _textController.text =
-            "Thiết bị ${widget.initialDevice} nhà tôi đang gặp sự cố, bạn tư vấn giúp tôi nhé.";
-        _handleSend();
-      });
-    } else if (widget.initialQuery != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _textController.text = widget.initialQuery!;
-        _handleSend();
-      });
+    if (_currentSessionId != null) {
+      // 🟢 NẾU CÓ SESSION CŨ: Load lại lịch sử từ Backend
+      _loadChatHistory(); 
     } else {
-      _messages.add(
-        ChatMessage(
-          text:
-              "Chào bạn! Mình là **SmartElec**. Thiết bị nhà bạn đang gặp sự cố gì?",
-          isUser: false,
-        ),
-      );
+      // 🟢 NẾU LÀ SESSION MỚI (Bấm từ nút Thêm hoặc nút Đặt thợ gốc)
+      if (widget.initialDevice != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _textController.text =
+              "Thiết bị ${widget.initialDevice} nhà tôi đang gặp sự cố, bạn tư vấn giúp tôi nhé.";
+          _handleSend(); // <-- Gửi câu này lên NestJS, NestJS sẽ tự tạo session và lấy câu này làm `symptom`
+        });
+      } else if (widget.initialQuery != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _textController.text = widget.initialQuery!;
+          _handleSend();
+        });
+      } else {
+        _messages.add(
+          ChatMessage(
+            text:
+                "Chào bạn! Mình là **SmartElec**. Thiết bị nhà bạn đang gặp sự cố gì?",
+            isUser: false,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadChatHistory() async {
+    setState(() => _isLoading = true);
+    try {
+      // Sử dụng hàm getChatMessages có sẵn trong api_service.dart của bạn
+      final logs = await ApiService.getChatMessages(_currentSessionId!);
+      
+      if (mounted) {
+        setState(() {
+          _messages.clear(); // Xóa tin nhắn mặc định
+          for (var log in logs) {
+            _messages.add(ChatMessage(
+              text: log['message'] ?? log['content'] ?? '', // Phụ thuộc vào key trả về từ NestJS
+              isUser: log['sender'] == 'USER' || log['role'] == 'user',
+              timestamp: log['createdAt'] != null ? DateTime.parse(log['createdAt']) : DateTime.now(),
+              sessionId: _currentSessionId,
+            ));
+          }
+          // (Tùy chọn) Gán lại deviceType và symptom vào thẻ trạng thái ở trên cùng
+          if (widget.initialDevice != null) {
+             _diagnosisCtx = _diagnosisCtx.copyWith(deviceType: widget.initialDevice);
+          }
+          _isLoading = false;
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi tải lịch sử chat: $e")));
+      }
     }
   }
 
@@ -234,6 +278,8 @@ class _ChatScreenState extends State<ChatScreen> {
         history: history,
         sessionId: _currentSessionId, // <-- Truyền sessionId hiện tại lên Backend
       );
+
+      debugPrint("👉 RESPONSE TỪ CHAT AI: $response");
       
       _updateState(response);
 

@@ -70,7 +70,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        fontFamily: 'Inter', // Hoặc font bác đang dùng
+        fontFamily: 'Inter', 
       ),
       initialRoute: '/',
       onGenerateRoute: (settings) {
