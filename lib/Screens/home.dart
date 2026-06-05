@@ -11,6 +11,7 @@ import '../providers/device_provider.dart';
 import '../providers/user_provider.dart';
 import '../Widgets/quick_booking_dialog.dart';
 import '../Widgets/booking_bottom_sheet.dart';
+import 'ai_history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -516,7 +517,7 @@ class RecentRepairSection extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const RepairHistoryScreen(),
+                        builder: (context) => const  AiHistoryScreen(),
                       ),
                     ).then((_) => onRefresh());
                   },
@@ -564,52 +565,108 @@ class RecentRepairSection extends StatelessWidget {
   }
 
   Widget _buildRepairItem(RepairCase item, BuildContext context) {
+    String statusText = "Đang tư vấn";
+    Color statusColor = const Color(0xff00B0FF); 
+    
+    if (item.status == "PENDING_TECHNICIAN") {
+      statusText = "Chưa đặt thợ";
+      statusColor = const Color(0xffFFC107); 
+    }
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => RepairDetailScreen(repairCase: item),
+            builder: (_) => ChatScreen(
+              // SỬA LỖI 1 & 2: Dùng item.title thay vì item.deviceName
+              initialDevice: item.title, 
+              
+              // SỬA LỖI 3 & 4: Tạm thời comment dòng này lại vì ta chưa sửa file chat_screen.dart
+              // Khi nào làm tới file chat_screen, ta sẽ mở comment và dùng int.parse(item.id)
+              // sessionId: int.parse(item.id), 
+            ),
           ),
         ).then((_) => onRefresh());
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xff1A244D),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.02)),
+          color: const Color(0xff1A244D), 
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    // SỬA LỖI: Dùng item.title thay vì item.deviceName
+                    item.title, 
                     style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                       color: Colors.white,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    DateFormat('dd/MM/yyyy HH:mm').format(item.date),
-                    style: const TextStyle(color: Colors.grey, fontSize: 11),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                ],
-              ),
+                  child: Text(
+                    statusText,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            const Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: Colors.white30,
-              size: 14,
+            const SizedBox(height: 8),
+            
+            Text(
+              "Vấn đề: ${item.symptom.isNotEmpty ? item.symptom : 'Chưa xác định'}", 
+              style: const TextStyle(
+                color: Color(0xff9EA9C1),
+                fontSize: 13,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 12),
+            
+            const Divider(color: Colors.white10, height: 1),
+            const SizedBox(height: 8),
+            
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today_rounded, color: Colors.grey, size: 12),
+                    const SizedBox(width: 6),
+                    Text(
+                      DateFormat('dd/MM/yyyy HH:mm').format(item.date),
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Color(0xff00E676), 
+                  size: 12,
+                ),
+              ],
             ),
           ],
         ),
