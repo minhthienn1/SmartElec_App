@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../services/api_service.dart';
 import '../models/repair_case.dart';
 import 'chat_screen.dart';
+import 'ai_chat_summary_screen.dart';
 
 // Đảm bảo đồng bộ phối màu với hệ thống Chat & Home
 const _kBgColor = Color(0xff081125);
@@ -261,16 +262,17 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
                               if (_isEditMode) {
                                 _toggleSelection(sessionId);
                               } else {
-                                // Vào phòng chat như bình thường
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => ChatScreen(
-                                      sessionId: sessionId,
-                                      initialDevice: item.title ?? "Chat với AI",
+                                    builder: (context) => AiChatSummaryScreen(
+                                      // Truyền ĐÚNG 3 tham số mà màn hình AiChatSummaryScreen đang yêu cầu
+                                      deviceName: item.title,      // Tên thiết bị (Tủ lạnh, Máy giặt...)
+                                      symptom: item.symptom,       // Triệu chứng người dùng nhập
+                                      aiSummary: item.summary,     // Đoạn tóm tắt kết quả từ AI
                                     ),
                                   ),
-                                ).then((_) => _fetchHistory());
+                                );
                               }
                             },
                             child: Container(
