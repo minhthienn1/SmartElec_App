@@ -925,4 +925,24 @@ class ApiService {
       return false;
     }
   }
+
+  static Future<bool> hideMultipleSessions(List<int> sessionIds) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.patch(
+        Uri.parse('$baseUrl/chats/sessions/hide-bulk'), // Khớp với endpoint NestJS
+        headers: headers,
+        body: jsonEncode({'ids': sessionIds}), 
+      );
+      
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return true;
+      }
+      debugPrint("❌ Lỗi API hideMultipleSessions: Mã lỗi ${response.statusCode}");
+      return false;
+    } catch (e) {
+      debugPrint("❌ Lỗi Exception hideMultipleSessions: $e");
+      return false;
+    }
+  }
 }
