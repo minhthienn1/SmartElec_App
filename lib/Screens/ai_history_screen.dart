@@ -45,21 +45,21 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
   }
 
   // Hàm xử lý popup xác nhận và xóa chat
-  Future<void> _confirmDelete(int sessionId, int index) async {
+  Future<void> _hideSession(int sessionId, int index) async {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: _kCardColor,
+        backgroundColor: const Color(0xff111B3D),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text("Xóa ca chẩn đoán?", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: const Text(
-          "Hành động này sẽ xóa vĩnh viễn đoạn hội thoại tư vấn này. Bạn có chắc chắn không?",
-          style: TextStyle(color: _kSubTextColor),
+          "Bạn có chắc chắn muốn xóa lịch sử này không?",
+          style: TextStyle(color: Color(0xff9EA9C1)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Hủy", style: TextStyle(color: Colors.grey)),
+            child: const Text("Không", style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -67,24 +67,33 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Xóa", style: TextStyle(color: Colors.white)),
+            child: const Text("Có", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
 
     if (confirm == true) {
-      final success = await ApiService.deleteChatSession(sessionId);
+      final success = await ApiService.hideChatSession(sessionId); 
+      
       if (success && mounted) {
         setState(() {
           _sessions.removeAt(index); // Xóa mượt trên UI ngay lập tức
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("🗑️ Đã xóa ca chẩn đoán thành công.")),
+          const SnackBar(
+            content: Text("🗑️ Đã xóa ca chẩn đoán khỏi lịch sử."),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating, // Hiển thị đẹp hơn
+          ),
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("🚨 Xóa thất bại. Vui lòng thử lại sau.")),
+          const SnackBar(
+            content: Text("🚨 Lỗi! Không thể xóa lúc này."),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
@@ -153,62 +162,11 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
                           ),
                           // Nút X màu xám thanh lịch bên phải theo ý bạn
                           trailing: IconButton(
-                          icon: const Icon(Icons.close, color: Colors.grey, size: 20),
-                          padding: EdgeInsets.zero, // Xóa padding mặc định để dễ bấm hơn
-                          constraints: const BoxConstraints(), // Thu gọn kích thước vùng bấm
-                          onPressed: () async {
-                            // Ngăn chặn sự kiện onTap của thẻ bao ngoài bị kích hoạt
-                            final bool? confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                backgroundColor: const Color(0xff111B3D),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                title: const Text("Xóa ca chẩn đoán?", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                content: const Text(
-                                  "Bạn có chắc chắn muốn xóa lịch sử này không? Hệ thống sẽ ẩn nó khỏi danh sách của bạn.",
-                                  style: TextStyle(color: Color(0xff9EA9C1)),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context, false),
-                                    child: const Text("Không", style: TextStyle(color: Colors.grey)),
-                                  ),
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.redAccent,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                    onPressed: () => Navigator.pop(context, true),
-                                    child: const Text("Có, Xóa", style: TextStyle(color: Colors.white)),
-                                  ),
-                                ],
-                              ),
-                            );
-
-                            if (confirm == true) {
-                              // Gọi API xóa mềm. Backend cần update isHiddenByCustomer = true
-                              final success = await ApiService.deleteChatSession(sessionId);
-                              if (success && mounted) {
-                                setState(() {
-                                  _sessions.removeAt(index);
-                                });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("🗑️ Đã xóa ca chẩn đoán khỏi lịch sử."),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                              } else if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("🚨 Lỗi! Không thể xóa lúc này."),
-                                    backgroundColor: Colors.redAccent,
-                                  ),
-                                );
-                              }
-                            }
-                          },
-                        ),
+                            icon: const Icon(Icons.close, color: Colors.grey, size: 20),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () => _hideSession(sessionId, index), // Gọi hàm đã tách ra
+                          ),
                           onTap: () {
                           Navigator.push(
                             context,
