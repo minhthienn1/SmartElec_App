@@ -5,17 +5,22 @@ class RepairCase {
   final String title;
   final DateTime date;
   final String summary;
-  // ➕ Thêm 2 thuộc tính mới để làm "Sổ khám bệnh"
   final String status;  
   final String symptom; 
+  final String advice;
+  final String dangerLevel;
+  final bool needMechanic;
 
   RepairCase({
     required this.id,
     required this.title,
     required this.date,
     required this.summary,
-    this.status = 'UNDER_DIAGNOSIS', // Giá trị mặc định phòng khi bị null
+    this.status = 'UNDER_DIAGNOSIS', 
     this.symptom = '',
+    this.advice = '',               
+    this.dangerLevel = 'Unknown',   
+    this.needMechanic = false,      
   });
 
   // Chuyển Object thành dạng Map chuẩn JSON
@@ -25,8 +30,11 @@ class RepairCase {
       'title': title,
       'date': date.toIso8601String(),
       'summary': summary,
-      'status': status,  // ➕ Thêm vào toMap
-      'symptom': symptom, // ➕ Thêm vào toMap
+      'status': status,  
+      'symptom': symptom, 
+      'advice': advice,           
+      'dangerLevel': dangerLevel,  
+      'needMechanic': needMechanic, 
     };
   }
 
@@ -37,8 +45,11 @@ class RepairCase {
       title: map['title'] ?? 'Chưa rõ thiết bị',
       date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
       summary: map['summary'] ?? '',
-      status: map['status'] ?? 'UNDER_DIAGNOSIS', // ➕ Map trường status từ server
-      symptom: map['symptom'] ?? '',              // ➕ Map trường symptom từ server
+      status: map['status'] ?? 'UNDER_DIAGNOSIS',
+      symptom: map['symptom'] ?? '',              
+      advice: map['advice'] ?? 'Chưa có lời khuyên cụ thể.',
+      dangerLevel: map['dangerLevel'] ?? 'Chưa xác định',
+      needMechanic: map['needMechanic'] ?? false,
     );
   }
 
