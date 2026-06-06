@@ -905,20 +905,23 @@ class ApiService {
     }
   }
 
-  static Future<bool> deleteChatSession(int sessionId) async {
+  static Future<bool> hideChatSession(int sessionId) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.delete(
-        Uri.parse('$baseUrl/chats/sessions/$sessionId'), // Đường dẫn khớp với Controller BE
+      // Đổi thành method PATCH và gọi đúng endpoint ẩn session
+      final response = await http.patch(
+        Uri.parse('$baseUrl/chats/sessions/$sessionId/hide'), 
         headers: headers,
       );
-
+      
+      // Thành công khi status là 200 (OK) hoặc 204 (No Content)
       if (response.statusCode == 200 || response.statusCode == 204) {
         return true;
       }
+      debugPrint("❌ Lỗi API hideChatSession: Mã lỗi ${response.statusCode}");
       return false;
     } catch (e) {
-      debugPrint("❌ Lỗi deleteChatSession: $e");
+      debugPrint("❌ Lỗi Exception hideChatSession: $e");
       return false;
     }
   }
