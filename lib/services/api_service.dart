@@ -717,19 +717,29 @@ class ApiService {
   /// Lấy thông tin cá nhân của user đang đăng nhập
   static Future<Map<String, dynamic>> getProfile() async {
     final headers = await _getHeaders();
-    final response = _handleResponse(
-      await http.get(
-        Uri.parse(
-          '$baseUrl/auth/profile',
-        ), // Giả định endpoint profile nằm ở /auth/profile
-        headers: headers,
-      ),
-    );
+    try {
+      final response = _handleResponse(
+        await http.get(
+          Uri.parse(
+            '$baseUrl/auth/profile',
+          ), // Giả định endpoint profile nằm ở /auth/profile
+          headers: headers,
+        ).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () => http.Response('Timeout', 408),
+        ),
+      );
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('Không thể tải thông tin cá nhân');
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else if (response.statusCode == 408) {
+        throw TimeoutException('Kết nối tới server quá lâu. Vui lòng kiểm tra kết nối mạng.');
+      } else {
+        throw Exception('Không thể tải thông tin cá nhân');
+      }
+    } catch (e) {
+      debugPrint('❌ Error in getProfile: $e');
+      rethrow;
     }
   }
 

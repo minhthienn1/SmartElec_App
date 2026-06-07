@@ -53,8 +53,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _handleNavigation() async {
     // 1. Dọn dẹp token cũ nếu có (Migration)
-    await StorageService.migrateOldToken();
+    try {
+      await StorageService.migrateOldToken();
+    } catch (e) {
+      debugPrint('⚠️ Migration error: $e');
+    }
 
+    // Show splash for 3 seconds
     await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
 
@@ -62,35 +67,49 @@ class _SplashScreenState extends State<SplashScreen> {
     final token = await _secureStorage.getAccessToken();
 
     if (token != null && !JwtDecoder.isExpired(token)) {
-      // 3. Token hợp lệ -> Nạp Profile vào Provider trước khi vào Main (Tích hợp từ incoming)
+      // 3. Token hợp lệ -> Nạp Profile vào Provider với timeout
       if (mounted) {
         try {
-          await Provider.of<UserProvider>(context, listen: false).fetchProfile();
+          // Add timeout to profile fetching
+          await Provider.of<UserProvider>(context, listen: false)
+              .fetchProfile()
+              .timeout(
+                const Duration(seconds: 8),
+                onTimeout: () {
+                  debugPrint('⏱️ fetchProfile timeout');
+                  throw TimeoutException('Tải hồ sơ quá lâu');
+                },
+              );
+          
           final user = Provider.of<UserProvider>(context, listen: false).user;
           if (user == null) {
-            // Lỗi mạng hoặc không lấy được thông tin -> Về Login
+            debugPrint('⚠️ User data is null after fetchProfile');
             if (mounted) Navigator.pushReplacementNamed(context, '/login');
             return;
           }
+          
           // 🟢 Kết nối Socket ngay sau khi nạp profile auto-login thành công
+          debugPrint('✅ Auto-login successful, connecting to socket...');
           ChatSocketService().connect(null);
+          
+          // 4. Check role để điều hướng
+          Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+          String role = decodedToken['role'] ?? 'USER';
+
+          if (role == 'TECHNICIAN') {
+            if (mounted) Navigator.pushReplacementNamed(context, '/tech_main');
+          } else {
+            if (mounted) Navigator.pushReplacementNamed(context, '/main');
+          }
         } catch (e) {
-          // Xử lý khi fetchProfile vấp lỗi log
+          debugPrint('❌ Error during auto-login: $e');
+          // Xử lý khi fetchProfile vấp lỗi hoặc timeout
           if (mounted) Navigator.pushReplacementNamed(context, '/login');
           return;
         }
       }
-
-      // 4. Check role để điều hướng (Đồng bộ cả HEAD và incoming)
-      Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-      String role = decodedToken['role'] ?? 'USER';
-
-      if (role == 'TECHNICIAN') {
-        if (mounted) Navigator.pushReplacementNamed(context, '/tech_main');
-      } else {
-        if (mounted) Navigator.pushReplacementNamed(context, '/main');
-      }
     } else {
+      debugPrint('⚠️ No valid token found, redirecting to login');
       if (mounted) Navigator.pushReplacementNamed(context, '/login');
     }
   }
