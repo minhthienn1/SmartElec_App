@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_elec/providers/user_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:smart_elec/services/api_service.dart'; // Đảm bảo đúng đường dẫn api_service của bạn
-import 'package:smart_elec/models/user_model.dart'; // Đảm bảo đúng đường dẫn mô hình user của bạn
+import 'package:smart_elec/services/api_service.dart'; 
+import 'package:smart_elec/models/user_model.dart'; 
+import 'repair_history_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -311,15 +312,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _buildInfoCard(),
                         const SizedBox(height: 20),
                         _buildMenuTile(
-                          Icons.history_edu_rounded,
-                          "Lịch sử sửa chữa",
+                          Icons.chat_bubble_outline,
+                          "Lịch sử chat với thợ",
                           const Color(0xff00B0FF),
+                          () { // Tham số onTap
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const RepairHistoryScreen(),
+                              ),
+                            );
+                          },
                         ),
+
                         const SizedBox(height: 12),
                         _buildMenuTile(
                           Icons.lock_reset_rounded,
                           "Đổi mật khẩu",
                           Colors.orangeAccent,
+                          () { // Tham số onTap cho nút đổi mật khẩu
+                            debugPrint("Bấm đổi mật khẩu");
+                          },
                         ),
                         const SizedBox(height: 35),
                         _buildLogoutButton(context),
@@ -464,7 +477,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildMenuTile(IconData icon, String title, Color color) {
+  Widget _buildMenuTile(IconData icon, String title, Color color,VoidCallback onTap) {
     return Container(
       decoration: BoxDecoration(
         color: _cardColor,
@@ -493,7 +506,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           color: Colors.white30,
           size: 16,
         ),
-        onTap: () {},
+        onTap: onTap,
       ),
     );
   }
