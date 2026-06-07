@@ -114,6 +114,10 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
     _connectionSubscription = _socketService.connectionStatus.listen((status) {
       if (mounted) {
         setState(() => _connectionStatus = status);
+        if (status == 'Đã kết nối lại') {
+          debugPrint('♻️ Bắt được event RECONNECT, tải lại lịch sử...');
+          _loadChatHistory();
+        }
       }
     });
 

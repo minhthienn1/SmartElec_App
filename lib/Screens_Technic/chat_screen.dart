@@ -91,7 +91,13 @@ class _TechChatScreenState extends State<TechChatScreen> {
     _socketService = ChatSocketService();
 
     _connectionSubscription = _socketService.connectionStatus.listen((status) {
-      if (mounted) setState(() => _connectionStatus = status);
+      if (mounted) {
+        setState(() => _connectionStatus = status);
+        if (status == 'Đã kết nối lại') {
+          debugPrint('♻️ Bắt được event RECONNECT, tải lại lịch sử...');
+          _loadChatHistory();
+        }
+      }
     });
 
     _messageSubscription = _socketService.onNewMessage.listen((data) {

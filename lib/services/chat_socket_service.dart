@@ -13,6 +13,7 @@ class ChatSocketService {
   final _secureStorage = SecureStorageService();
 
   bool get isConnected => _socket?.connected ?? false;
+  bool _hasConnectedOnce = false;
 
   // Streams để UI có thể lắng nghe
   final StreamController<Map<String, dynamic>> _messageController =
@@ -75,7 +76,14 @@ class ChatSocketService {
 
     _socket?.onConnect((_) {
       debugPrint('✅ ChatSocketService: Đã kết nối Socket ID: ${_socket?.id}');
-      _connectionStatusController.add('Đã kết nối');
+      
+      if (_hasConnectedOnce) {
+        debugPrint('♻️ ChatSocketService: Đã KẾT NỐI LẠI (Reconnected)!');
+        _connectionStatusController.add('Đã kết nối lại');
+      } else {
+        _hasConnectedOnce = true;
+        _connectionStatusController.add('Đã kết nối');
+      }
 
       // Vừa kết nối xong thì tự động join room luôn (nếu có sessionId)
       if (sessionId != null) {
@@ -168,6 +176,7 @@ class ChatSocketService {
   /// Ngắt kết nối và dọn dẹp toàn hệ thống Socket
   void disconnect() {
     debugPrint('🛑 ChatSocketService: Bắt đầu ngắt kết nối Socket...');
+    _hasConnectedOnce = false;
 
     // 1. Ngắt kết nối Socket
     if (_socket != null) {

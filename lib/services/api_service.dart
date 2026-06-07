@@ -356,6 +356,7 @@ class ApiService {
         body: jsonEncode({
           'title': repairCase.title, // Flutter title → Prisma deviceType
           'summary': repairCase.summary, // Flutter summary → Prisma aiSummary
+          'sessionType': 'DIRECT_BOOKING', // Đánh dấu là đơn đặt trực tiếp
         }),
       ),
     );
