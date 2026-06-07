@@ -30,7 +30,7 @@ class _RepairHistoryScreenState extends State<RepairHistoryScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final data = await ApiService.getHistory();
+      final data = await ApiService.getMechanicRepairHistory();
       if (!mounted) return;
       setState(() {
         _history = data;
@@ -66,7 +66,7 @@ class _RepairHistoryScreenState extends State<RepairHistoryScreen> {
       backgroundColor: const Color(0xffF8F9FA),
       appBar: AppBar(
         title: const Text(
-          "Lịch sử sửa chữa",
+          "Lịch sử chat với thợ",
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
@@ -103,10 +103,10 @@ class _RepairHistoryScreenState extends State<RepairHistoryScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.history_toggle_off, size: 80, color: Colors.grey[300]),
+          Icon(Icons.speaker_notes_off, size: 80, color: Colors.grey[300]), // Đổi icon phù hợp với chat
           const SizedBox(height: 16),
           const Text(
-            "Chưa có lịch sử chẩn đoán nào",
+            "Chưa có lịch sử chat nào", // <--- Cập nhật text
             style: TextStyle(color: Colors.grey, fontSize: 16),
           ),
         ],
@@ -130,32 +130,52 @@ class _RepairHistoryScreenState extends State<RepairHistoryScreen> {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
-        title: Text(
-          item.title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                item.mechanicName ?? "Thợ sửa chữa", 
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Row(
+              children: [
+                const Icon(Icons.star, color: Colors.amber, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  item.rating?.toStringAsFixed(1) ?? "5.0",
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+              ],
+            ),
+          ],
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 4),
-            Text(
-              DateFormat('dd/MM/yyyy - HH:mm').format(item.date),
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(Icons.calendar_today, size: 12, color: Colors.grey[500]),
+                const SizedBox(width: 4),
+                Text(
+                  DateFormat('dd/MM/yyyy - HH:mm').format(item.date),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Text(
-              item.summary,
+              item.chatSummary ?? "Đã thống nhất giá và hoàn tất sửa chữa.",
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 13, color: Colors.black87),
             ),
           ],
         ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 14,
-          color: Colors.grey,
-        ),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
         onTap: () {
           Navigator.push(
             context,

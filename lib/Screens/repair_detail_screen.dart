@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
 import '../models/repair_case.dart';
 
@@ -19,189 +18,77 @@ class RepairDetailScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Row(
+        title: const Text(
+          "Chi tiết giao dịch",
+          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.white.withOpacity(0.15),
-              child: const Icon(
-                Icons.electrical_services,
-                size: 18,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "SmartElec",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  "Kết quả chẩn đoán đã lưu",
-                  style: TextStyle(color: Colors.white60, fontSize: 11),
-                ),
-              ],
-            ),
+            _buildMechanicInfoCard(),
+            const SizedBox(height: 16),
+            _buildTransactionSummaryCard(),
+            const SizedBox(height: 16),
+            _buildReviewCard(),
+            const SizedBox(height: 32),
+            _buildContactAgainButton(context),
           ],
         ),
-      ),
-      body: Column(
-        children: [
-          // Banner thông tin ca sửa
-          _buildCaseBanner(),
-
-          // Nội dung chẩn đoán
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Bubble AI hiển thị kết quả
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      CircleAvatar(
-                        radius: 15,
-                        backgroundColor: const Color(0xff0B1B4D),
-                        child: const Icon(
-                          Icons.electrical_services,
-                          size: 15,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(16),
-                                  topRight: Radius.circular(16),
-                                  bottomLeft: Radius.circular(4),
-                                  bottomRight: Radius.circular(16),
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.06),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: MarkdownBody(
-                                data: repairCase.summary,
-                                styleSheet: MarkdownStyleSheet(
-                                  p: const TextStyle(
-                                    color: Colors.black87,
-                                    fontSize: 15,
-                                    height: 1.5,
-                                  ),
-                                  strong: const TextStyle(
-                                    color: Color(0xff0B1B4D),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                  listBullet: const TextStyle(
-                                    color: Colors.black87,
-                                  ),
-                                  blockquoteDecoration: BoxDecoration(
-                                    color: Colors.orange.shade50,
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border(
-                                      left: BorderSide(
-                                        color: Colors.orange.shade400,
-                                        width: 3,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              DateFormat(
-                                'HH:mm dd/MM/yyyy',
-                              ).format(repairCase.date),
-                              style: TextStyle(
-                                color: Colors.grey.shade500,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 32),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Nút gợi ý chẩn đoán lại
-                  _buildDiagnoseAgainButton(context),
-
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildCaseBanner() {
+  Widget _buildMechanicInfoCard() {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xff0B1B4D).withOpacity(0.05),
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))
+        ],
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xff0B1B4D).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.history,
-              color: Color(0xff0B1B4D),
-              size: 20,
-            ),
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: const Color(0xff0B1B4D).withOpacity(0.1),
+            child: const Icon(Icons.person, color: Color(0xff0B1B4D), size: 28),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  repairCase.title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Color(0xff0B1B4D),
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                  repairCase.mechanicName ?? "Thợ sửa chữa",
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
-                  "Chẩn đoán lúc ${DateFormat('HH:mm — dd/MM/yyyy').format(repairCase.date)}",
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  "SĐT: ${repairCase.mechanicPhone ?? 'Chưa cập nhật'}",
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.amber.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.star, color: Colors.amber, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  repairCase.rating?.toStringAsFixed(1) ?? "5.0",
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
                 ),
               ],
             ),
@@ -211,38 +98,106 @@ class RepairDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDiagnoseAgainButton(BuildContext context) {
+  Widget _buildTransactionSummaryCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Tóm tắt thỏa thuận",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xff0B1B4D)),
+          ),
+          const Divider(height: 24),
+          _buildInfoRow("Ngày chốt:", DateFormat('dd/MM/yyyy - HH:mm').format(repairCase.date)),
+          const SizedBox(height: 12),
+          _buildInfoRow("Chi phí chốt:", repairCase.agreedPrice ?? "Chưa chốt giá", isHighlight: true),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              repairCase.chatSummary ?? "Không có tóm tắt giao dịch.",
+              style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Đánh giá của bạn",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xff0B1B4D)),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            repairCase.reviewComment ?? "Bạn chưa để lại đánh giá cho giao dịch này.",
+            style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.black87, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, {bool isHighlight = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: isHighlight ? FontWeight.bold : FontWeight.w500,
+            fontSize: isHighlight ? 16 : 14,
+            color: isHighlight ? Colors.green[700] : Colors.black,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContactAgainButton(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.pop(context),
+      onTap: () {
+        // Điều hướng lại màn hình chat room của Thợ dựa vào repairCase.id hoặc id thợ nếu cần
+      },
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           color: const Color(0xff0B1B4D),
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xff0B1B4D).withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
         child: const Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.chat_bubble_outline, color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text(
-                "Chẩn đoán ca mới",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
-              ),
-            ],
+          child: Text(
+            "Nhắn tin lại cho thợ này",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
       ),

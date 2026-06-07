@@ -417,6 +417,44 @@ class ApiService {
     }).toList();
   }
 
+  /// Lấy danh sách lịch sử sửa chữa (chỉ lấy các ca ĐÃ CÓ THỢ)
+  /// Gọi API: GET /repairs/history
+  static Future<List<RepairCase>> getMechanicRepairHistory() async {
+    // Sử dụng lại hàm _getHeaders() chuẩn của bạn
+    final headers = await _getHeaders(); 
+    
+    // Sử dụng lại _handleResponse để bắt lỗi hết hạn Token như các hàm khác
+    final response = _handleResponse(
+      await http.get(
+        Uri.parse('$baseUrl/repairs/history'), // Endpoint mới vừa tạo ở NestJS
+        headers: headers
+      ),
+    );
+
+    // Kế thừa nguyên vẹn cách bắt lỗi backend của bạn
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      String serverMessage = 'Không thể tải lịch sử sửa chữa với thợ.';
+      try {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        serverMessage = body['message'] as String? ?? serverMessage;
+      } catch (_) {}
+      throw Exception('Lỗi ${response.statusCode}: $serverMessage');
+    }
+
+    // Parse JSON và trả về List
+    final List<dynamic> jsonList = jsonDecode(response.body) as List<dynamic>;
+    
+    return jsonList.map((item) {
+      final map = item as Map<String, dynamic>;
+      
+      debugPrint("====================================");
+      debugPrint("👉 REPAIR HISTORY ITEM: \n${map.toString()}");
+
+      // Gọi hàm fromMap đã được update an toàn
+      return RepairCase.fromMap(map);
+    }).toList();
+  }
+
   // ─────────────────────────────────────────────────────────────────
   // REALTIME CHAT APIs (1-1)
   // ─────────────────────────────────────────────────────────────────
@@ -915,20 +953,43 @@ class ApiService {
     }
   }
 
-  static Future<bool> deleteChatSession(int sessionId) async {
+  static Future<bool> hideChatSession(int sessionId) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.delete(
-        Uri.parse('$baseUrl/chats/sessions/$sessionId'), // Đường dẫn khớp với Controller BE
+      // Đổi thành method PATCH và gọi đúng endpoint ẩn session
+      final response = await http.patch(
+        Uri.parse('$baseUrl/chats/sessions/$sessionId/hide'), 
         headers: headers,
       );
-
+      
+      // Thành công khi status là 200 (OK) hoặc 204 (No Content)
       if (response.statusCode == 200 || response.statusCode == 204) {
         return true;
       }
+      debugPrint("❌ Lỗi API hideChatSession: Mã lỗi ${response.statusCode}");
       return false;
     } catch (e) {
-      debugPrint("❌ Lỗi deleteChatSession: $e");
+      debugPrint("❌ Lỗi Exception hideChatSession: $e");
+      return false;
+    }
+  }
+
+  static Future<bool> hideMultipleSessions(List<int> sessionIds) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.patch(
+        Uri.parse('$baseUrl/chats/sessions/hide-bulk'), // Khớp với endpoint NestJS
+        headers: headers,
+        body: jsonEncode({'ids': sessionIds}), 
+      );
+      
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return true;
+      }
+      debugPrint("❌ Lỗi API hideMultipleSessions: Mã lỗi ${response.statusCode}");
+      return false;
+    } catch (e) {
+      debugPrint("❌ Lỗi Exception hideMultipleSessions: $e");
       return false;
     }
   }
