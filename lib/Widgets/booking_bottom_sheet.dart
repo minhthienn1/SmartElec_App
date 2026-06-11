@@ -4,6 +4,18 @@ import '../providers/user_provider.dart';
 import 'custom_loading_button.dart';
 import '../Screens/location_picker_screen.dart';
 
+class AppColors {
+  static const Color kPrimaryOrange = Color(0xFFFF7A00);
+  static const Color kDarkOrange = Color(0xFFE65C00); 
+  static const Color kLightOrange = Color(0xFFFFF3E0); 
+  static const Color kBackground = Color(0xFFF9FAFB); 
+  static const Color kInputBackground = Colors.white;
+  static const Color kTextPrimary = Color(0xFF1F2937);
+  static const Color kTextSecondary = Color(0xFF6B7280);
+  static const Color kMutedGrey = Color(0xFF9CA3AF);
+  static const Color kIdleBorder = Color(0xFFE5E7EB);
+}
+
 class BookingBottomSheet extends StatefulWidget {
   final int sessionId;
   final String? deviceType;
@@ -64,13 +76,11 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
   }
 
   Future<void> _fetchLocation() async {
-    // Mở màn hình chọn vị trí trên bản đồ
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const LocationPickerScreen()),
     );
 
-    // Nếu người dùng xác nhận vị trí
     if (result != null && result is Map<String, dynamic>) {
       setState(() {
         _latitude = result['lat'];
@@ -96,7 +106,6 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
       return;
     }
 
-    // Nối địa chỉ (Bỏ Quận/Huyện theo yêu cầu người dùng)
     final fullAddress = "${_detailAddressController.text.trim()}, ${_cityController.text.trim()}";
 
     setState(() => _isLoading = true);
@@ -108,7 +117,7 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
         'latitude': _latitude,
         'longitude': _longitude,
       });
-      if (mounted) Navigator.pop(context); // Đóng Sheet nếu thành công
+      if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -126,13 +135,22 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // Đảm bảo an toàn vùng notch/keyboard của màn hình
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    final inputBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.kIdleBorder, width: 1),
+    );
+
+    final focusBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.kPrimaryOrange, width: 1.5),
+    );
 
     return Container(
       padding: EdgeInsets.fromLTRB(20, 16, 20, bottomInset + 16),
       decoration: const BoxDecoration(
-        color: Color(0xff081125), // Đổi sang Premium Dark Theme đồng bộ
+        color: AppColors.kBackground, 
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
@@ -144,13 +162,12 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Thanh Handle trên cùng
                 Center(
                   child: Container(
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.white24,
+                      color: AppColors.kMutedGrey.withOpacity(0.4),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -161,24 +178,23 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white, // Đổi sang màu trắng đồng bộ Dark theme
+                    color: AppColors.kTextPrimary, 
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                // Tóm tắt sự cố (Read-only) - Đồng bộ Dark Theme
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xff111B3D),
+                    color: AppColors.kLightOrange,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white12),
+                    border: Border.all(color: AppColors.kPrimaryOrange.withOpacity(0.2)),
                   ),
                   child: Row(
                     children: [
                       const Icon(
                         Icons.build_circle,
-                        color: Colors.blueAccent,
+                        color: AppColors.kPrimaryOrange,
                         size: 36,
                       ),
                       const SizedBox(width: 12),
@@ -191,14 +207,14 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
-                                color: Colors.white,
+                                color: AppColors.kTextPrimary,
                               ),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               widget.symptom ?? "Đã được chẩn đoán bởi AI",
                               style: const TextStyle(
-                                color: Colors.white70,
+                                color: AppColors.kTextSecondary,
                                 fontSize: 13,
                               ),
                             ),
@@ -212,23 +228,22 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
 
                 const Text(
                   "Thông tin liên hệ",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white70),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.kTextSecondary),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _nameController,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.kTextPrimary),
                   validator: (v) => (v == null || v.trim().isEmpty) ? "Vui lòng nhập tên" : null,
                   decoration: InputDecoration(
                     labelText: "Tên người nhận",
-                    labelStyle: const TextStyle(color: Colors.white60),
-                    prefixIcon: const Icon(Icons.person_outline, color: Colors.white70),
+                    labelStyle: const TextStyle(color: AppColors.kTextSecondary),
+                    prefixIcon: const Icon(Icons.person_outline, color: AppColors.kMutedGrey),
                     filled: true,
-                    fillColor: const Color(0xff1A244D),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
+                    fillColor: AppColors.kInputBackground,
+                    border: inputBorder,
+                    enabledBorder: inputBorder,
+                    focusedBorder: focusBorder,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                 ),
@@ -236,18 +251,17 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.kTextPrimary),
                   validator: (v) => (v == null || v.trim().isEmpty) ? "Vui lòng nhập SĐT" : null,
                   decoration: InputDecoration(
                     labelText: "Số điện thoại",
-                    labelStyle: const TextStyle(color: Colors.white60),
-                    prefixIcon: const Icon(Icons.phone_outlined, color: Colors.white70),
+                    labelStyle: const TextStyle(color: AppColors.kTextSecondary),
+                    prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.kMutedGrey),
                     filled: true,
-                    fillColor: const Color(0xff1A244D),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
+                    fillColor: AppColors.kInputBackground,
+                    border: inputBorder,
+                    enabledBorder: inputBorder,
+                    focusedBorder: focusBorder,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                 ),
@@ -258,35 +272,33 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
                   children: [
                     const Text(
                       "Vị trí sửa chữa",
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white70),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.kTextSecondary),
                     ),
                     TextButton.icon(
                       onPressed: _fetchLocation,
-                      icon: const Icon(Icons.my_location, size: 16, color: Colors.blueAccent),
+                      icon: const Icon(Icons.my_location, size: 16, color: AppColors.kPrimaryOrange),
                       label: const Text(
                         "Lấy vị trí từ bản đồ",
-                        style: TextStyle(fontSize: 12, color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 12, color: AppColors.kPrimaryOrange, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 
-                // Ô nhập Tỉnh/Thành phố (Chiếm trọn bề rộng)
                 TextFormField(
                   controller: _cityController,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.kTextPrimary),
                   validator: (v) => (v == null || v.trim().isEmpty) ? "Thiếu Tỉnh/Thành phố" : null,
                   decoration: InputDecoration(
                     labelText: "Tỉnh/Thành phố",
-                    labelStyle: const TextStyle(color: Colors.white60),
-                    prefixIcon: const Icon(Icons.map_outlined, color: Colors.white70),
+                    labelStyle: const TextStyle(color: AppColors.kTextSecondary),
+                    prefixIcon: const Icon(Icons.map_outlined, color: AppColors.kMutedGrey),
                     filled: true,
-                    fillColor: const Color(0xff1A244D),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
+                    fillColor: AppColors.kInputBackground,
+                    border: inputBorder,
+                    enabledBorder: inputBorder,
+                    focusedBorder: focusBorder,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                 ),
@@ -294,21 +306,20 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
                 TextFormField(
                   controller: _detailAddressController,
                   maxLines: 2,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.kTextPrimary),
                   validator: (v) => (v == null || v.trim().isEmpty) ? "Vui lòng nhập số nhà/đường" : null,
                   decoration: InputDecoration(
                     labelText: "Số nhà, tên đường, phường/xã...",
-                    labelStyle: const TextStyle(color: Colors.white60),
+                    labelStyle: const TextStyle(color: AppColors.kTextSecondary),
                     prefixIcon: const Padding(
                       padding: EdgeInsets.only(bottom: 20),
-                      child: Icon(Icons.location_on_outlined, color: Colors.white70),
+                      child: Icon(Icons.location_on_outlined, color: AppColors.kMutedGrey),
                     ),
                     filled: true,
-                    fillColor: const Color(0xff1A244D),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
+                    fillColor: AppColors.kInputBackground,
+                    border: inputBorder,
+                    enabledBorder: inputBorder,
+                    focusedBorder: focusBorder,
                   ),
                 ),
 
@@ -321,7 +332,8 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
                       text: "XÁC NHẬN & TÌM THỢ",
                       isLoading: _isLoading,
                       onPressed: _handleConfirm,
-                      gradientColors: [Colors.green.shade600, Colors.green.shade400],
+                      // Đổi sang màu cam đồng bộ rực rỡ
+                      gradientColors: const [AppColors.kPrimaryOrange, AppColors.kDarkOrange],
                     ),
                   ),
                 ),

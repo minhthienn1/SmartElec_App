@@ -8,6 +8,16 @@ import '../services/chat_socket_service.dart';
 import '../services/zalo_auth_service.dart';
 import '../services/google_auth_service.dart';
 
+
+
+const Color kPrimaryOrange = Color(0xFFFF6600); 
+const Color kBackground = Color(0xFFFFFFFF);   
+const Color kSurface = Color(0xFFF3F4F6);       
+const Color kTextMain = Color(0xFF111827);      
+const Color kTextMuted = Color(0xFF6B7280);     
+const Color kBorder = Color(0xFFE5E7EB);        
+const Color kErrorRed = Color(0xFFEF4444);      
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -17,16 +27,6 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with TickerProviderStateMixin {
-  // --- BẢNG MÀU FUTURISTIC SCI-FI CAO CẤP (ĐÃ TINH CHỈNH ĐỘ TƯƠNG PHẢN) ---
-  static const Color kPrimaryCyan = Color(0xFF0EA5E9);
-  static const Color kSecondaryGreen = Color(0xFF22C55E);
-  static const Color kDeepBlack = Color(0xFF040812);
-  static const Color kInputBackground = Color(0xFF0F172A);
-  static const Color kMutedGrey = Color(0xFF9CA3AF);
-  static const Color kTextSecondary = Color(0xFFA0AEC0);
-  static const Color kErrorRed = Color(0xFFEF4444);
-  static const Color kGlowGreen = Color(0xFF10B981);
-  static const Color kIdleBorder = Color(0xFF1E293B);
 
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
@@ -152,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen>
         }
 
         if (!mounted) return;
-        _showSnackBar("⚡ ĐÃ KẾT NỐI HỆ THỐNG", kPrimaryCyan);
+        _showSnackBar("⚡ ĐÃ KẾT NỐI HỆ THỐNG", kPrimaryOrange);
 
         // 🔐 XÓA DỮ LIỆU NHẠY CẢM: Clear password controller ngay sau thành công
         _passController.clear();
@@ -215,7 +215,7 @@ class _LoginScreenState extends State<LoginScreen>
         }
 
         if (!mounted) return;
-        _showSnackBar(result['message'] ?? "⚡ ĐÃ KẾT NỐI HỆ THỐNG", kPrimaryCyan);
+        _showSnackBar(result['message'] ?? "⚡ ĐÃ KẾT NỐI HỆ THỐNG", kPrimaryOrange);
         
         Future.delayed(const Duration(milliseconds: 800), () {
           if (result['needsPassword'] == true) {
@@ -265,7 +265,7 @@ class _LoginScreenState extends State<LoginScreen>
         }
 
         if (!mounted) return;
-        _showSnackBar(result['message'] ?? "⚡ ĐÃ KẾT NỐI HỆ THỐNG", kPrimaryCyan);
+        _showSnackBar(result['message'] ?? "⚡ ĐÃ KẾT NỐI HỆ THỐNG", kPrimaryOrange);
         
         Future.delayed(const Duration(milliseconds: 800), () {
           if (result['needsPassword'] == true) {
@@ -309,7 +309,7 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kDeepBlack,
+      backgroundColor: kBackground,
       body: Stack(
         children: [
           _buildBackgroundEffect(),
@@ -330,29 +330,31 @@ class _LoginScreenState extends State<LoginScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              const SizedBox(height: 40),
-                              _buildOrbitLogo(),
-                              const SizedBox(height: 28),
+                              const SizedBox(height: 30),
+                              _buildOrbitLogo(), // Bạn có thể cân nhắc giảm width/height trong hàm này từ 140 xuống 110
+                              const SizedBox(height: 20),
                               _buildBrandTitle(),
-                              const SizedBox(height: 40),
+                              const SizedBox(height: 36), // Nhóm Logo tách biệt
+                              
                               _buildSegmentedToggle(),
-                              const SizedBox(height: 36),
+                              const SizedBox(height: 24), // Toggle gần với Form hơn
+                              
                               _buildRoundedInput(
                                 controller: _phoneController,
                                 label: "SỐ ĐIỆN THOẠI",
                                 icon: Icons.phone_android_rounded,
-                                hint: "0xxx xxx xxx",
+                                hint: "Nhập số điện thoại...", // Sửa hint cho tự nhiên
                                 validator: (v) =>
-                                    (v == null || v.isEmpty || v.length < 10)
+                                    (v == null || v.isEmpty || v.length < 9)
                                     ? "Số điện thoại không hợp lệ"
                                     : null,
                               ),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 16), // Cấu trúc gọn gàng hơn
                               _buildRoundedInput(
                                 controller: _passController,
                                 label: "MẬT KHẨU",
                                 icon: Icons.lock_outline_rounded,
-                                hint: "Nhập mật khẩu",
+                                hint: "Nhập mật khẩu...",
                                 isPass: true,
                                 isObscure: _isObscure,
                                 onSuffixPressed: () =>
@@ -363,7 +365,7 @@ class _LoginScreenState extends State<LoginScreen>
                               ),
                               _buildForgotPassword(),
 
-                              const SizedBox(height: 54),
+                              const SizedBox(height: 32),
                               _buildMainButton("ĐĂNG NHẬP"),
 
                               const SizedBox(height: 32),
@@ -373,7 +375,7 @@ class _LoginScreenState extends State<LoginScreen>
 
                               const SizedBox(height: 24),
                               _buildFooterRegister(),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 24),
                             ],
                           ),
                         ),
@@ -392,15 +394,7 @@ class _LoginScreenState extends State<LoginScreen>
   // --- UI COMPONENTS ---
 
   Widget _buildBackgroundEffect() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: RadialGradient(
-          center: Alignment(0.0, -0.4),
-          radius: 1.2,
-          colors: [Color(0xFF0A1324), kDeepBlack],
-        ),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   Widget _buildOrbitLogo() {
@@ -423,13 +417,13 @@ class _LoginScreenState extends State<LoginScreen>
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: kGlowGreen.withOpacity(glowOpacity.value),
+                color: kPrimaryOrange.withOpacity(glowOpacity.value),
                 blurRadius: glowRadius.value,
                 spreadRadius: 2,
               ),
             ],
           ),
-          child: Image.asset('assets/logo6.png', fit: BoxFit.cover),
+          child: Image.asset('assets/logo.png', fit: BoxFit.cover),
         );
       },
     );
@@ -438,35 +432,29 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildBrandTitle() {
     return Column(
       children: [
-        Text(
+        const Text(
           "SMARTELEC",
           style: TextStyle(
-            fontSize: 28,
+            fontSize: 32,
             fontWeight: FontWeight.w900,
-            color: Colors.white,
-            letterSpacing: 6,
-            shadows: [
-              Shadow(color: kPrimaryCyan.withOpacity(0.3), blurRadius: 10),
-            ],
+            color: kPrimaryOrange,
+            letterSpacing: 4.0,
           ),
         ),
         const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: kSecondaryGreen.withOpacity(0.02),
-            border: Border.all(
-              color: kSecondaryGreen.withOpacity(0.3),
-              width: 1,
-            ),
-            borderRadius: BorderRadius.circular(6),
+            color: kPrimaryOrange.withOpacity(0.08), // Nền cam rất nhạt, siêu mượt
+            borderRadius: BorderRadius.circular(20), // Bo tròn dạng viên thuốc (Pill shape)
+            // BỎ HẲN VIỀN (border) để nhìn không bị cứng
           ),
-          child: const Text(
+          child: Text(
             "AI DIAGNOSTIC SYSTEM",
             style: TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: kSecondaryGreen,
+              fontWeight: FontWeight.w800,
+              color: kPrimaryOrange.withOpacity(0.9),
               letterSpacing: 2.5,
             ),
           ),
@@ -480,9 +468,9 @@ class _LoginScreenState extends State<LoginScreen>
       height: 50,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFF020611),
+        color: kSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.05), width: 1),
+        border: Border.all(color: kBorder, width: 1),
       ),
       child: Row(
         children: [
@@ -506,7 +494,7 @@ class _LoginScreenState extends State<LoginScreen>
             borderRadius: BorderRadius.circular(10),
             gradient: selected
                 ? const LinearGradient(
-                    colors: [kSecondaryGreen, kPrimaryCyan],
+                    colors: [kPrimaryOrange, Color(0xFFFF8533)], 
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   )
@@ -515,7 +503,7 @@ class _LoginScreenState extends State<LoginScreen>
           child: Text(
             label,
             style: TextStyle(
-              color: selected ? Colors.white : kTextSecondary,
+              color: selected ? Colors.white : kTextMuted,
               fontWeight: FontWeight.bold,
               fontSize: 12,
               letterSpacing: 0.5,
@@ -536,74 +524,64 @@ class _LoginScreenState extends State<LoginScreen>
     VoidCallback? onSuffixPressed,
     String? Function(String?)? validator,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: kMutedGrey,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 1.5,
-            ),
-          ),
+    return TextFormField(
+      controller: controller,
+      obscureText: isPass ? isObscure : false,
+      validator: validator,
+      style: const TextStyle(color: kTextMain, fontSize: 16, fontWeight: FontWeight.w500), // Chữ gõ vào to & rõ hơn
+      cursorColor: kPrimaryOrange,
+      decoration: InputDecoration(
+        labelText: label, // Đưa nhãn vào trong
+        labelStyle: const TextStyle(
+          color: kTextMuted,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 1.0,
         ),
-        TextFormField(
-          controller: controller,
-          obscureText: isPass ? isObscure : false,
-          validator: validator,
-          style: const TextStyle(color: Colors.white, fontSize: 15),
-          cursorColor: kPrimaryCyan,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(
-              color: Colors.white.withOpacity(0.2),
-              fontSize: 14,
-            ),
-            prefixIcon: Icon(icon, color: kSecondaryGreen, size: 21),
-            suffixIcon: isPass
-                ? IconButton(
-                    icon: Icon(
-                      isObscure ? Icons.visibility_off : Icons.visibility,
-                      color: kTextSecondary.withOpacity(0.6),
-                      size: 20,
-                    ),
-                    onPressed: onSuffixPressed,
-                  )
-                : null,
-            filled: true,
-            fillColor: kInputBackground,
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 18,
-              horizontal: 16,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: kIdleBorder, width: 1.2),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: kPrimaryCyan, width: 1.5),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: kErrorRed, width: 1),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: kErrorRed, width: 1.5),
-            ),
-            errorStyle: const TextStyle(
-              color: kErrorRed,
-              fontWeight: FontWeight.w500,
-              fontSize: 12,
-            ),
-          ),
+        floatingLabelStyle: const TextStyle(
+          color: kPrimaryOrange,
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
         ),
-      ],
+        hintText: hint,
+        hintStyle: TextStyle(
+          color: kTextMuted.withOpacity(0.5),
+          fontSize: 14,
+        ),
+        prefixIcon: Icon(icon, color: kPrimaryOrange, size: 22),
+        suffixIcon: isPass
+            ? IconButton(
+                icon: Icon(
+                  isObscure ? Icons.visibility_off : Icons.visibility,
+                  color: kTextMuted,
+                  size: 22,
+                ),
+                onPressed: onSuffixPressed,
+              )
+            : null,
+        filled: true,
+        fillColor: kSurface, // Dùng nền xám nhạt thay vì trắng để tạo khối
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 20, // Tăng chiều cao ô nhập liệu
+          horizontal: 20,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16), // Bo góc tròn trịa hơn
+          borderSide: const BorderSide(color: Colors.transparent), // Bỏ viền khi không focus để gọn mắt
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: kPrimaryOrange, width: 2.0),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: kErrorRed, width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: kErrorRed, width: 2.0),
+        ),
+      ),
     );
   }
 
@@ -615,16 +593,16 @@ class _LoginScreenState extends State<LoginScreen>
         child: TextButton(
           onPressed: () {},
           style: TextButton.styleFrom(
-            foregroundColor: kTextSecondary,
+            foregroundColor: kTextMuted,
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
             minimumSize: Size.zero,
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          child: const Text(
+          child: Text(
             "Quên mật khẩu?",
             style: TextStyle(
               fontSize: 13,
-              color: kTextSecondary,
+              color: kTextMuted,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -641,7 +619,7 @@ class _LoginScreenState extends State<LoginScreen>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: kPrimaryCyan.withOpacity(0.25),
+            color: kPrimaryOrange.withOpacity(0.25),
             blurRadius: 16,
             spreadRadius: -2,
             offset: const Offset(0, 4),
@@ -655,14 +633,13 @@ class _LoginScreenState extends State<LoginScreen>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
+          backgroundColor: kPrimaryOrange,
         ),
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             gradient: const LinearGradient(
-              colors: [kSecondaryGreen, kPrimaryCyan],
+              colors: [kPrimaryOrange, Color(0xFFFF8533)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -699,12 +676,12 @@ class _LoginScreenState extends State<LoginScreen>
       child: RichText(
         text: const TextSpan(
           text: "Chưa có tài khoản? ",
-          style: TextStyle(color: kMutedGrey, fontSize: 14),
+          style: TextStyle(color: kTextMuted, fontSize: 14),
           children: [
             TextSpan(
               text: "Đăng ký ngay",
               style: TextStyle(
-                color: kSecondaryGreen,
+                color: kPrimaryOrange,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -719,15 +696,15 @@ class _LoginScreenState extends State<LoginScreen>
       children: [
         Row(
           children: [
-            Expanded(child: Divider(color: Colors.white.withOpacity(0.1), thickness: 1)),
+            Expanded(child: Divider(color: kBorder, thickness: 1)),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 "Hoặc đăng nhập bằng",
-                style: TextStyle(color: kTextSecondary, fontSize: 13),
+                style: TextStyle(color: kTextMuted, fontSize: 13),
               ),
             ),
-            Expanded(child: Divider(color: Colors.white.withOpacity(0.1), thickness: 1)),
+            Expanded(child: Divider(color: kBorder, thickness: 1)),
           ],
         ),
         const SizedBox(height: 24),
@@ -773,7 +750,6 @@ class _LoginScreenState extends State<LoginScreen>
         decoration: BoxDecoration(
           color: color.withOpacity(0.9),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
           boxShadow: [
             BoxShadow(
               color: color.withOpacity(0.2),

@@ -5,10 +5,19 @@ import '../models/repair_case.dart';
 import 'chat_screen.dart';
 import 'ai_chat_summary_screen.dart';
 
-// Đảm bảo đồng bộ phối màu với hệ thống Chat & Home
-const _kBgColor = Color(0xff081125);
-const _kCardColor = Color(0xff111B3D);
-const _kSubTextColor = Color(0xff9EA9C1);
+// Tích hợp trực tiếp bảng màu chuẩn vào file này
+class AppColors {
+  static const Color kPrimaryOrange = Color(0xFFFF7A00);
+  static const Color kDarkOrange = Color(0xFFE65C00); 
+  static const Color kLightOrange = Color(0xFFFFF3E0); 
+  static const Color kBackground = Color(0xFFF9FAFB); 
+  static const Color kInputBackground = Colors.white;
+  static const Color kTextPrimary = Color(0xFF1F2937);
+  static const Color kTextSecondary = Color(0xFF6B7280);
+  static const Color kMutedGrey = Color(0xFF9CA3AF);
+  static const Color kErrorRed = Color(0xFFEF4444);
+  static const Color kIdleBorder = Color(0xFFD1D5DB);
+}
 
 class AiHistoryScreen extends StatefulWidget {
   const AiHistoryScreen({super.key});
@@ -29,11 +38,9 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
     _fetchHistory();
   }
 
-  // Hàm load lại danh sách lịch sử chẩn đoán
   Future<void> _fetchHistory() async {
     setState(() => _isLoading = true);
     try {
-      // Tận dụng hàm lấy lịch sử sẵn có của ApiService
       final data = await ApiService.getHistory(); 
       setState(() {
         _sessions = data;
@@ -49,17 +56,15 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
     }
   }
 
-  // Hàm tiện ích lấy ID dạng int an toàn
   int _safeGetId(dynamic item) {
     if (item.id is int) return item.id as int;
     return (int.tryParse(item.id.toString()) ?? 0);
   }
 
-  // Tiện ích hiển thị SnackBar thông báo gọn gàng
   void _showSnackBar(String message, Color bgColor) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(message, style: const TextStyle(color: Colors.white)),
         backgroundColor: bgColor,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
@@ -67,39 +72,38 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
     );
   }
 
-  // Hàm xử lý xóa các mục đã chọn
   Future<void> _deleteSelectedSessions() async {
     if (_selectedIds.isEmpty) return;
-
     final int count = _selectedIds.length;
 
-    // 1. Hiện Dialog xác nhận
+    // Cập nhật Dialog UI sáng màu
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xff111B3D),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           "Xóa $count ca chẩn đoán?",
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: AppColors.kTextPrimary, fontWeight: FontWeight.bold),
         ),
         content: Text(
           "Bạn có chắc chắn muốn xóa $count lịch sử đã chọn không?",
-          style: const TextStyle(color: Color(0xff9EA9C1)),
+          style: const TextStyle(color: AppColors.kTextSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Không", style: TextStyle(color: Colors.grey)),
+            child: const Text("Không", style: TextStyle(color: AppColors.kTextSecondary, fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
+              backgroundColor: AppColors.kErrorRed,
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Có", style: TextStyle(color: Colors.white)),
+            child: const Text("Có, Xóa", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -107,24 +111,18 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
 
     if (confirm != true) return;
 
-    // 2. Gọi API và xử lý UI
     setState(() => _isLoading = true);
-
     try {
       final List<int> idsToHide = _selectedIds.toList();
-      
-      // Sử dụng đúng hàm xóa mềm nhiều ID mà bạn đã viết trong ApiService
       final success = await ApiService.hideMultipleSessions(idsToHide); 
 
       if (success && mounted) {
         setState(() {
-          // Xóa các phần tử khỏi UI ngay lập tức
           _sessions.removeWhere((item) => _selectedIds.contains(_safeGetId(item)));
           _selectedIds.clear();
           _isEditMode = false;
           _isLoading = false;
         });
-        // Đổi thông báo một chút để khách hàng hiểu là chỉ ẩn đi
         _showSnackBar("🗑️ Đã xóa $count ca chẩn đoán khỏi lịch sử của bạn.", Colors.green);
       } else if (mounted) {
         throw Exception("Máy chủ từ chối yêu cầu xóa lịch sử.");
@@ -132,12 +130,11 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        _showSnackBar("🚨 Lỗi khi xóa: $e", Colors.redAccent);
+        _showSnackBar("🚨 Lỗi khi xóa: $e", AppColors.kErrorRed);
       }
     }
   }
 
-  // Phân loại ngày tháng thông minh
   String _getDateGroup(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -146,10 +143,9 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
 
     if (itemDate == today) return "Hôm nay";
     if (itemDate == yesterday) return "Hôm qua";
-    return DateFormat('dd/MM/yyyy').format(itemDate); // Các ngày cũ hơn hiện ngày/tháng/năm
+    return DateFormat('dd/MM/yyyy').format(itemDate);
   }
 
-  // Kích hoạt Edit Mode khi nhấn giữ
   void _toggleEditMode(int initialId) {
     setState(() {
       _isEditMode = true;
@@ -157,12 +153,10 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
     });
   }
 
-  // Chọn hoặc Bỏ chọn 1 item
   void _toggleSelection(int id) {
     setState(() {
       if (_selectedIds.contains(id)) {
         _selectedIds.remove(id);
-        // Tự động thoát Edit Mode nếu không còn item nào được chọn
         if (_selectedIds.isEmpty) _isEditMode = false; 
       } else {
         _selectedIds.add(id);
@@ -170,7 +164,6 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
     });
   }
 
-  // Thoát chế độ chọn
   void _cancelEditMode() {
     setState(() {
       _isEditMode = false;
@@ -181,10 +174,9 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
   void _selectAll() {
     setState(() {
       if (_selectedIds.length == _sessions.length) {
-        _selectedIds.clear(); // Bỏ chọn hết
+        _selectedIds.clear(); 
         _isEditMode = false;
       } else {
-        // Cập nhật cách lấy ID cho chuẩn
         _selectedIds = _sessions.map((item) => _safeGetId(item)).toSet();
       }
     });
@@ -193,44 +185,47 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _kBgColor,
+      backgroundColor: AppColors.kBackground, // Đổi màu nền sáng
       appBar: AppBar(
         title: Text(
           _isEditMode ? "Đã chọn ${_selectedIds.length}" : "Lịch sử chẩn đoán AI",
-          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.kTextPrimary, fontSize: 18),
         ),
-        backgroundColor: _kCardColor,
-        elevation: 0,
+        backgroundColor: Colors.white, // Đổi AppBar sang trắng
+        surfaceTintColor: Colors.white,
+        elevation: 1, // Đổ bóng nhẹ cho AppBar
+        shadowColor: Colors.black.withOpacity(0.2),
         centerTitle: true,
-        // Nút Hủy chế độ edit
         leading: _isEditMode
             ? IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
+                icon: const Icon(Icons.close, color: AppColors.kTextPrimary),
                 onPressed: _cancelEditMode,
               )
-            : null,
-        iconTheme: const IconThemeData(color: Colors.white),
+            : const BackButton(color: AppColors.kTextPrimary), // Nút back mặc định màu đen
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xff00B0FF)))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.kPrimaryOrange))
           : _sessions.isEmpty
-              ? const Center(child: Text("Chưa có ca chẩn đoán nào.", style: TextStyle(color: _kSubTextColor)))
+              ? const Center(
+                  child: Text("Chưa có ca chẩn đoán nào.", style: TextStyle(color: AppColors.kTextSecondary, fontSize: 16)),
+                )
               : RefreshIndicator(
+                  color: AppColors.kPrimaryOrange,
                   onRefresh: _fetchHistory,
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     itemCount: _sessions.length,
                     itemBuilder: (context, index) {
                       final item = _sessions[index];
-                      final int sessionId = item.id is int ? item.id : (int.tryParse(item.id.toString()) ?? 0);
+                      final int sessionId = _safeGetId(item);
                       final DateTime parsedDate = item.date;
                       final String formattedTime = DateFormat('HH:mm').format(parsedDate);
                       final String dateGroup = _getDateGroup(parsedDate);
 
-                      // Logic hiển thị Header gộp ngày
                       bool showHeader = false;
                       if (index == 0) {
-                        showHeader = true; // Item đầu tiên luôn có header
+                        showHeader = true;
                       } else {
                         final prevItem = _sessions[index - 1];
                         final String prevDateGroup = _getDateGroup(prevItem.date);
@@ -244,11 +239,11 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
                         children: [
                           if (showHeader)
                             Padding(
-                              padding: const EdgeInsets.only(top: 8, bottom: 12, left: 4),
+                              padding: const EdgeInsets.only(top: 12, bottom: 8, left: 4),
                               child: Text(
                                 dateGroup,
                                 style: const TextStyle(
-                                  color: Color(0xff00B0FF), // Màu xanh nổi bật cho Header
+                                  color: AppColors.kPrimaryOrange, // Header ngày tháng màu cam
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
                                 ),
@@ -266,58 +261,79 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => AiChatSummaryScreen(
-                                      // Truyền ĐÚNG 3 tham số mà màn hình AiChatSummaryScreen đang yêu cầu
-                                      deviceName: item.title,      // Tên thiết bị (Tủ lạnh, Máy giặt...)
-                                      symptom: item.symptom,       // Triệu chứng người dùng nhập
-                                      aiSummary: item.summary,     // Đoạn tóm tắt kết quả từ AI
+                                      deviceName: item.title,      
+                                      symptom: item.symptom,       
+                                      aiSummary: item.summary,     
                                     ),
                                   ),
                                 );
                               }
                             },
-                            child: Container(
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
                               margin: const EdgeInsets.only(bottom: 12),
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xff1C2A53) : _kCardColor, // Đổi màu nhẹ khi được chọn
-                                borderRadius: BorderRadius.circular(12),
+                                color: isSelected ? AppColors.kLightOrange : Colors.white,
+                                borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: isSelected ? const Color(0xff00B0FF) : Colors.white.withOpacity(0.05),
+                                  color: isSelected ? AppColors.kPrimaryOrange : AppColors.kIdleBorder.withOpacity(0.5),
                                   width: isSelected ? 1.5 : 1,
                                 ),
+                                boxShadow: [
+                                  if (!isSelected) // Đổ bóng cho card thường
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.03),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    )
+                                ],
                               ),
                               child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                 leading: _isEditMode
                                     ? Checkbox(
                                         value: isSelected,
-                                        activeColor: const Color(0xff00B0FF),
-                                        side: const BorderSide(color: Colors.grey),
+                                        activeColor: AppColors.kPrimaryOrange,
+                                        checkColor: Colors.white,
+                                        side: const BorderSide(color: AppColors.kIdleBorder, width: 1.5),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                                         onChanged: (_) => _toggleSelection(sessionId),
                                       )
-                                    : null,
+                                    : Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.kLightOrange.withOpacity(0.5),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.smart_toy_outlined, color: AppColors.kPrimaryOrange, size: 24),
+                                      ),
                                 title: Text(
                                   item.title ?? "Thiết bị lạ",
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                  style: const TextStyle(color: AppColors.kTextPrimary, fontWeight: FontWeight.bold, fontSize: 16),
                                 ),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      "Vấn đề: ${item.symptom ?? 'Chưa rõ nguyên nhân'}",
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(color: _kSubTextColor, fontSize: 13),
-                                    ),
                                     const SizedBox(height: 6),
                                     Text(
-                                      formattedTime,
-                                      style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11),
+                                      "Vấn đề: ${item.symptom ?? 'Chưa rõ nguyên nhân'}",
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(color: AppColors.kTextSecondary, fontSize: 13, height: 1.3),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.access_time, size: 14, color: AppColors.kMutedGrey),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          formattedTime,
+                                          style: const TextStyle(color: AppColors.kMutedGrey, fontSize: 12),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                                // Nếu không ở chế độ Edit, vẫn giữ nút X nhỏ gọn cho thao tác nhanh
-                                trailing: null,
                               ),
                             ),
                           ),
@@ -330,9 +346,11 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
           ? SafeArea(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: const BoxDecoration(
-                  color: _kCardColor,
-                  border: Border(top: BorderSide(color: Colors.white12, width: 0.5)),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4)),
+                  ],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -341,28 +359,27 @@ class _AiHistoryScreenState extends State<AiHistoryScreen> {
                       onPressed: _selectAll,
                       icon: Icon(
                         _selectedIds.length == _sessions.length ? Icons.deselect_outlined : Icons.select_all_outlined,
-                        color: const Color(0xff00B0FF),
+                        color: AppColors.kPrimaryOrange,
                         size: 20,
                       ),
                       label: Text(
                         _selectedIds.length == _sessions.length ? "Bỏ chọn hết" : "Chọn tất cả",
-                        style: const TextStyle(color: Color(0xff00B0FF), fontSize: 15, fontWeight: FontWeight.w600),
+                        style: const TextStyle(color: AppColors.kPrimaryOrange, fontSize: 15, fontWeight: FontWeight.w600),
                       ),
                     ),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: AppColors.kErrorRed,
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       ),
-                      // Gọi hàm Xóa nhiều ở đây
                       onPressed: _selectedIds.isEmpty ? null : _deleteSelectedSessions, 
-                      icon: const Icon(Icons.delete_sweep_outlined, size: 20,),
+                      icon: const Icon(Icons.delete_sweep_outlined, size: 20),
                       label: Text(
                         "Xóa (${_selectedIds.length})",
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                     ),
                   ],

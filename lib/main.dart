@@ -21,6 +21,7 @@ import 'package:smart_elec/Screens_Technic/chat_screen.dart';
 import 'package:smart_elec/Screens_Technic/job_detail_screen.dart';
 
 import 'package:smart_elec/services/notification_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -45,6 +46,8 @@ Future<void> main() async {
   } catch (e) {
     debugPrint("❌ Notification error: $e");
   }
+
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   runApp(
     MultiProvider(

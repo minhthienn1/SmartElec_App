@@ -16,6 +16,19 @@ import '../services/notification_service.dart';
 import '../Widgets/review_bottom_sheet.dart';
 import '../core/constants/job_status.dart';
 
+class AppColors {
+  static const Color kPrimaryOrange = Color(0xFFFF7A00);
+  static const Color kDarkOrange = Color(0xFFE65C00); 
+  static const Color kLightOrange = Color(0xFFFFF3E0); 
+  static const Color kBackground = Color(0xFFF9FAFB); 
+  static const Color kInputBackground = Colors.white;
+  static const Color kTextPrimary = Color(0xFF1F2937);
+  static const Color kTextSecondary = Color(0xFF6B7280);
+  static const Color kMutedGrey = Color(0xFF9CA3AF);
+  static const Color kErrorRed = Color(0xFFEF4444);
+  static const Color kIdleBorder = Color(0xFFD1D5DB);
+}
+
 class MessengerChatScreen extends StatefulWidget {
   final int sessionId;
   final User receiver; // Người đang chat cùng (VD: Thợ Lao)
@@ -299,8 +312,6 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
     );
 
     if (mounted) {
-      // Dù có review hay không, khi đóng sheet này ta thoát màn hình chat luôn
-      // vì đơn đã hoàn thành và sẽ bị ẩn khỏi danh sách tin nhắn.
       Navigator.pop(context);
     }
   }
@@ -520,13 +531,13 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff081125),
+      backgroundColor: AppColors.kBackground,
       appBar: _buildAppBar(),
       body: SafeArea(
         child: Column(
           children: [
             _buildConnectionBanner(),
-            _buildCompletedBanner(), // ← Banner hoàn thành + nút đánh giá
+            _buildCompletedBanner(), 
             Expanded(
               child: _isLoadingHistory
                   ? Center(
@@ -595,7 +606,7 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange[700],
+                      backgroundColor: AppColors.kPrimaryOrange,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -613,9 +624,9 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: const Color(0xff0e1938),
+      backgroundColor: Colors.white,
       elevation: 0.5,
-      iconTheme: const IconThemeData(color: Colors.white),
+      iconTheme: const IconThemeData(color: AppColors.kTextPrimary),
       titleSpacing: 0,
       title: InkWell(
         onTap: _showTechnicianInfoDialog, // Kích hoạt Dialog hiển thị thông tin khi nhấn vào thanh AppBar
@@ -626,7 +637,7 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: primaryOrange.withOpacity(0.1),
+                backgroundColor: AppColors.kLightOrange,
                 backgroundImage: widget.receiver.avatarUrl != null
                     ? NetworkImage(widget.receiver.avatarUrl!)
                     : null,
@@ -652,7 +663,7 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
                             widget.receiver.fullName,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppColors.kTextPrimary,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -667,7 +678,7 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
                       style: TextStyle(
                         color: _connectionStatus == 'Đã kết nối'
                             ? Colors.green
-                            : Colors.grey,
+                            : AppColors.kTextSecondary,
                         fontSize: 12,
                       ),
                     ),
@@ -903,14 +914,20 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
                             message.type == MessageType.QUOTE_CARD
                         ? Colors.transparent
                         : isMe
-                        ? primaryOrange
-                        : const Color(0xff1A244D),
-                    borderRadius: BorderRadius.only(
+                        ? AppColors.kPrimaryOrange
+                        : Colors.white,
+                        border: message.type == MessageType.TEXT && !isMe
+                        ? Border.all(color: AppColors.kIdleBorder.withOpacity(0.5)) // Thợ nhắn: Thêm viền xám
+                        : null,
+                      borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(20),
                       topRight: const Radius.circular(20),
                       bottomLeft: Radius.circular(isMe ? 20 : 5),
                       bottomRight: Radius.circular(isMe ? 5 : 20),
                     ),
+                    boxShadow: !isMe && message.type == MessageType.TEXT ? [
+                      BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))
+                    ] : [],
                   ),
                   child: _buildMessageContent(message, isMe),
                 ),
@@ -934,8 +951,8 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
       case MessageType.TEXT:
         return Text(
           message.content,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: isMe ? Colors.white : AppColors.kTextPrimary,
             fontSize: 15,
             height: 1.3,
           ),
@@ -955,14 +972,14 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
             placeholder: (context, url) => Container(
               width: 200,
               height: 150,
-              color: Colors.grey[300],
-              child: const Center(child: CircularProgressIndicator()),
+              color: AppColors.kIdleBorder,
+              child: const Center(child: CircularProgressIndicator(color: AppColors.kPrimaryOrange)),
             ),
             errorWidget: (context, url, error) => Container(
               width: 200,
               height: 150,
-              color: Colors.grey[300],
-              child: const Icon(Icons.broken_image, color: Colors.grey),
+              color: AppColors.kIdleBorder,
+              child: const Icon(Icons.broken_image, color: AppColors.kMutedGrey),
             ),
           ),
         );
@@ -1034,7 +1051,7 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
                     'YÊU CẦU BÁO GIÁ',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: primaryOrange,
+                      color: AppColors.kPrimaryOrange,
                     ),
                   ),
                 ],
@@ -1290,19 +1307,19 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
   Widget _buildBottomInput() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      decoration: const BoxDecoration(color: Color(0xff0e1938)),
+      decoration: BoxDecoration(color: Colors.white,border: Border(top: BorderSide(color: AppColors.kIdleBorder.withOpacity(0.5))),),
       child: SafeArea(
         child: Row(
           children: [
             IconButton(
-              icon: Icon(Icons.add_circle, color: primaryOrange, size: 28),
+              icon: const Icon(Icons.add_circle, color: AppColors.kPrimaryOrange, size: 28),
               onPressed: _isLoadingHistory ? null : _showAttachmentBottomSheet,
             ),
             const SizedBox(width: 4),
             Expanded(
               child: TextField(
                 controller: _textController,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.kTextPrimary),
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _handleSendText(),
                 onChanged: (val) {
@@ -1312,7 +1329,7 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
                   hintText: 'Nhắn tin...',
                   hintStyle: const TextStyle(color: Colors.white30),
                   filled: true,
-                  fillColor: const Color(0xff1A244D),
+                  fillColor: AppColors.kBackground,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 10,
@@ -1339,7 +1356,7 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: const Color(0xff0e1938), // Đồng bộ với màu nền AppBar của bạn
+          backgroundColor: Colors.white, 
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(color: primaryOrange.withOpacity(0.3), width: 1),
@@ -1351,7 +1368,7 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
               const Text(
                 'Thông tin thợ sửa chữa',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.kTextPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1417,7 +1434,7 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
         Expanded(
           child: RichText(
             text: TextSpan(
-              style: const TextStyle(color: Colors.white, fontSize: 14),
+              style: const TextStyle(color: AppColors.kTextPrimary, fontSize: 14),
               children: [
                 TextSpan(text: value, style: const TextStyle(fontWeight: FontWeight.w500)),
               ],

@@ -1,5 +1,18 @@
 import 'package:flutter/material.dart';
 
+// Đảm bảo class AppColors đã được định nghĩa hoặc import từ home.txt
+class AppColors {
+  static const Color kPrimaryOrange = Color(0xFFFF7A00);
+  static const Color kDarkOrange = Color(0xFFE65C00); 
+  static const Color kLightOrange = Color(0xFFFFF3E0); 
+  static const Color kBackground = Color(0xFFF9FAFB); 
+  static const Color kInputBackground = Colors.white;
+  static const Color kTextPrimary = Color(0xFF1F2937);
+  static const Color kTextSecondary = Color(0xFF6B7280);
+  static const Color kMutedGrey = Color(0xFF9CA3AF);
+  static const Color kIdleBorder = Color(0xFFE5E7EB);
+}
+
 class QuickBookingDialog extends StatefulWidget {
   final Function(String device, String symptom) onConfirm;
 
@@ -13,7 +26,6 @@ class _QuickBookingDialogState extends State<QuickBookingDialog> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _symptomController = TextEditingController();
 
-  // Danh sách các loại thiết bị phổ biến để chọn nhanh
   final List<String> _devices = [
     "Điều hòa / Máy lạnh",
     "Tủ lạnh",
@@ -37,9 +49,7 @@ class _QuickBookingDialogState extends State<QuickBookingDialog> {
     if (!_formKey.currentState!.validate() || _selectedDevice == null) {
       return;
     }
-    // Đóng Dialog trước để tránh race condition khi onConfirm thực hiện Navigator.push
     Navigator.pop(context);
-    // Trả về thiết bị và mô tả sự cố
     widget.onConfirm(
       _selectedDevice!,
       _symptomController.text.trim(),
@@ -48,16 +58,27 @@ class _QuickBookingDialogState extends State<QuickBookingDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // Định nghĩa Style đường viền đồng bộ cho Theme sáng
+    final inputBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.kIdleBorder, width: 1),
+    );
+
+    final focusBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.kPrimaryOrange, width: 1.5),
+    );
+
     return AlertDialog(
-      backgroundColor: const Color(0xff081125), // Đổi sang Premium Dark Theme đồng bộ
+      backgroundColor: Colors.white, // Chuyển hẳn sang nền Trắng Premium
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Row(
         children: [
-          Icon(Icons.flash_on, color: Colors.amber),
+          Icon(Icons.flash_on, color: AppColors.kPrimaryOrange), // Icon đổi thành cam rực rỡ
           SizedBox(width: 8),
           Text(
             "Đặt thợ khẩn cấp",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.kTextPrimary),
           ),
         ],
       ),
@@ -69,22 +90,23 @@ class _QuickBookingDialogState extends State<QuickBookingDialog> {
             children: [
               const Text(
                 "Chọn loại thiết bị và mô tả ngắn gọn sự cố để thợ biết đường chuẩn bị dụng cụ nhé.",
-                style: TextStyle(fontSize: 13, color: Colors.white70),
+                style: TextStyle(fontSize: 13, color: AppColors.kTextSecondary),
               ),
               const SizedBox(height: 16),
 
-              // Dropdown Chọn thiết bị - Đồng bộ Dark Theme + Hạn chế chiều cao menu
+              // Dropdown Chọn thiết bị - Đồng bộ Light Theme mới
               DropdownButtonFormField<String>(
                 value: _selectedDevice,
-                dropdownColor: const Color(0xff1A244D), // Nền của danh sách xổ xuống tối màu
-                menuMaxHeight: 220, // ⚡ Hạn chế chiều cao menu xổ xuống và tự động bật Scroll
-                style: const TextStyle(color: Colors.white),
+                dropdownColor: Colors.white, // Danh sách xổ xuống màu nền trắng sạch sẽ
+                menuMaxHeight: 220,
+                iconEnabledColor: AppColors.kPrimaryOrange,
+                style: const TextStyle(color: AppColors.kTextPrimary),
                 items: _devices
                     .map((d) => DropdownMenuItem(
                           value: d,
                           child: Text(
                             d,
-                            style: const TextStyle(fontSize: 14, color: Colors.white),
+                            style: const TextStyle(fontSize: 14, color: AppColors.kTextPrimary),
                           ),
                         ))
                     .toList(),
@@ -92,33 +114,31 @@ class _QuickBookingDialogState extends State<QuickBookingDialog> {
                 validator: (val) => val == null ? "Vui lòng chọn loại thiết bị" : null,
                 decoration: InputDecoration(
                   labelText: "Chọn thiết bị",
-                  labelStyle: const TextStyle(color: Colors.white60),
+                  labelStyle: const TextStyle(color: AppColors.kTextSecondary),
                   filled: true,
-                  fillColor: const Color(0xff1A244D),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
+                  fillColor: AppColors.kInputBackground,
+                  border: inputBorder,
+                  enabledBorder: inputBorder,
+                  focusedBorder: focusBorder,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
               const SizedBox(height: 16),
 
-              // Ô nhập mô tả sự cố - Đồng bộ Dark Theme
+              // Ô nhập mô tả sự cố - Đồng bộ Light Theme mới
               TextFormField(
                 controller: _symptomController,
                 maxLines: 3,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.kTextPrimary),
                 validator: (v) => (v == null || v.trim().isEmpty) ? "Vui lòng nhập mô tả sự cố" : null,
                 decoration: InputDecoration(
                   labelText: "Mô tả sự cố (VD: Máy không mát, chảy nước...)",
-                  labelStyle: const TextStyle(color: Colors.white60),
+                  labelStyle: const TextStyle(color: AppColors.kTextSecondary),
                   filled: true,
-                  fillColor: const Color(0xff1A244D),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
+                  fillColor: AppColors.kInputBackground,
+                  border: inputBorder,
+                  enabledBorder: inputBorder,
+                  focusedBorder: focusBorder,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
@@ -129,12 +149,13 @@ class _QuickBookingDialogState extends State<QuickBookingDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text("Hủy", style: TextStyle(color: Colors.white54)),
+          child: const Text("Hủy", style: TextStyle(color: AppColors.kTextSecondary, fontWeight: FontWeight.w500)),
         ),
         ElevatedButton(
           onPressed: _submit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blueAccent, // Đồng bộ xanh dương cao cấp
+            backgroundColor: AppColors.kPrimaryOrange, // Chuyển sang nút Cam thương hiệu
+            elevation: 0,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),

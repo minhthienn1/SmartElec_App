@@ -12,7 +12,7 @@ class RepairDetailScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xffF0F2F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xff0B1B4D),
+        backgroundColor: const Color.fromARGB(255, 105, 37, 0),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
@@ -56,8 +56,8 @@ class RepairDetailScreen extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: const Color(0xff0B1B4D).withOpacity(0.1),
-            child: const Icon(Icons.person, color: Color(0xff0B1B4D), size: 28),
+            backgroundColor: const Color(0xFFE65100).withOpacity(0.1), // Nền icon cam nhạt
+            child: const Icon(Icons.person, color: Color(0xFFE65100), size: 28), // Icon cam đậm
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -114,7 +114,7 @@ class RepairDetailScreen extends StatelessWidget {
         children: [
           const Text(
             "Tóm tắt thỏa thuận",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xff0B1B4D)),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFFE65100)),
           ),
           const Divider(height: 24),
           _buildInfoRow("Ngày chốt:", DateFormat('dd/MM/yyyy - HH:mm').format(repairCase.date)),
@@ -153,7 +153,7 @@ class RepairDetailScreen extends StatelessWidget {
         children: [
           const Text(
             "Đánh giá của bạn",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xff0B1B4D)),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFFE65100)),
           ),
           const SizedBox(height: 12),
           Text(
@@ -191,7 +191,7 @@ class RepairDetailScreen extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xff0B1B4D),
+          color: const Color.fromARGB(255, 120, 42, 0),
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Center(
