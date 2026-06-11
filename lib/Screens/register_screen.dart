@@ -10,14 +10,14 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   // --- ĐỒNG BỘ BẢNG MÀU SCI-FI CHUẨN HỆ THỐNG ---
-  static const Color kPrimaryCyan = Color(0xFF0EA5E9);
-  static const Color kSecondaryGreen = Color(0xFF22C55E);
-  static const Color kDeepBlack = Color(0xFF040812);
-  static const Color kInputBackground = Color(0xFF0F172A);
+  static const Color kPrimaryOrange = Color(0xFFFF7A00); // Màu cam chủ đạo
+  static const Color kBackground = Colors.white; // Nền trắng
+  static const Color kInputBackground = Colors.white;
+  static const Color kTextPrimary = Color(0xFF1F2937); // Đen xám cho chữ chính
+  static const Color kTextSecondary = Color(0xFF6B7280); // Xám cho chữ phụ
   static const Color kMutedGrey = Color(0xFF9CA3AF);
-  static const Color kTextSecondary = Color(0xFFA0AEC0);
   static const Color kErrorRed = Color(0xFFEF4444);
-  static const Color kIdleBorder = Color(0xFF1E293B);
+  static const Color kIdleBorder = Color(0xFFD1D5DB); // Xám nhạt cho viền ô nhập
 
   // GIỮ NGUYÊN HOÀN TOÀN LOGIC BIẾN VÀ VALIDATE
   final _formKey = GlobalKey<FormState>();
@@ -72,7 +72,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
         if (result['userId'] != null || result['id'] != null) {
           if (!mounted) return;
-          _showSnackBar("Chào mừng bạn đến với SmartElec!", kSecondaryGreen);
+          _showSnackBar("Đăng ký thành công!, hãy đăng nhập", kPrimaryOrange);
           Navigator.pop(context);
         }
       } catch (e) {
@@ -107,163 +107,138 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kDeepBlack,
-      body: Stack(
-        children: [
-          _buildBackgroundEffect(),
-          SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: kBackground, // Đổi sang nền trắng
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: kTextPrimary, // Nút back màu đen xám
+                    size: 20,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                const SizedBox(height: 24),
+
+                /// HEADER CHUẨN LIGHT MODE
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const SizedBox(height: 16),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: kTextSecondary,
-                        size: 20,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                    const SizedBox(height: 24),
-
-                    /// HEADER SANG TRỌNG CHUẨN CÔNG NGHỆ
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        const Text(
-                          "Tham gia\nSmartElec",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.w900,
-                            height: 1.1,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Icon(
-                            Icons.bolt_rounded,
-                            color: kPrimaryCyan,
-                            size: 38,
-                            shadows: [
-                              Shadow(
-                                color: kPrimaryCyan.withOpacity(0.5),
-                                blurRadius: 12,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
                     const Text(
-                      "Giải pháp AI tối ưu thiết bị điện",
+                      "Tham gia\nSmartElec",
                       style: TextStyle(
-                        color: kTextSecondary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
+                        color: kTextPrimary, // Chữ tiêu đề màu đen
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        height: 1.1,
+                        letterSpacing: 0.5,
                       ),
                     ),
-
-                    const SizedBox(height: 40),
-
-                    _buildSectionLabel("THÔNG TIN CƠ BẢN"),
-                    _buildField(
-                      _fullNameController,
-                      "Họ và tên",
-                      Icons.person_rounded,
-                      (v) => (v == null || !_nameRegExp.hasMatch(v))
-                          ? "Tên không hợp lệ"
-                          : null,
+                    const SizedBox(width: 6),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Icon(
+                        Icons.bolt_rounded,
+                        color: kPrimaryOrange, // Tia sét màu cam
+                        size: 38,
+                      ),
                     ),
-
-                    _buildField(
-                      _emailController,
-                      "Email",
-                      Icons.alternate_email_rounded,
-                      (v) => (v == null || !v.contains("@"))
-                          ? "Email không hợp lệ"
-                          : null,
-                      keyboard: TextInputType.emailAddress,
-                    ),
-
-                    _buildField(
-                      _phoneController,
-                      "Số điện thoại",
-                      Icons.phone_android_rounded,
-                      (v) => (v == null || !_phoneRegExp.hasMatch(v))
-                          ? "SĐT phải 10 số, bắt đầu bằng 0"
-                          : null,
-                      keyboard: TextInputType.phone,
-                    ),
-
-                    const SizedBox(height: 8),
-                    _buildGenderSelector(),
-
-                    const SizedBox(height: 32),
-                    _buildSectionLabel("BẢO MẬT & ĐỊA CHỈ"),
-                    _buildField(
-                      _passController,
-                      "Mật khẩu",
-                      Icons.lock_outline_rounded,
-                      (v) => v!.length < 6 ? "Tối thiểu 6 ký tự" : null,
-                      isPass: true,
-                    ),
-                    _buildField(
-                      _confirmPassController,
-                      "Xác nhận mật khẩu",
-                      Icons.shield_outlined,
-                      (v) => v != _passController.text
-                          ? "Mật khẩu không khớp"
-                          : null,
-                      isPass: true,
-                    ),
-
-                    _buildField(
-                      _addressController,
-                      "Địa chỉ",
-                      Icons.location_on_outlined,
-                      null,
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // --- GIỮ LẠI NÚT 1 (TỪ NHÁNH HEAD) ---
-                    _buildMainButton("ĐĂNG KÝ TÀI KHOẢN"),
-
-                    const SizedBox(height: 20),
-
-                    const SizedBox(height: 40),
                   ],
                 ),
-              ),
+                const SizedBox(height: 12),
+                const Text(
+                  "Giải pháp AI tối ưu thiết bị điện",
+                  style: TextStyle(
+                    color: kTextSecondary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+
+                const SizedBox(height: 40),
+
+                _buildSectionLabel("THÔNG TIN CƠ BẢN"),
+                _buildField(
+                  _fullNameController,
+                  "Họ và tên",
+                  Icons.person_rounded,
+                  (v) => (v == null || !_nameRegExp.hasMatch(v))
+                      ? "Tên không hợp lệ"
+                      : null,
+                ),
+
+                _buildField(
+                  _emailController,
+                  "Email",
+                  Icons.alternate_email_rounded,
+                  (v) => (v == null || !v.contains("@"))
+                      ? "Email không hợp lệ"
+                      : null,
+                  keyboard: TextInputType.emailAddress,
+                ),
+
+                _buildField(
+                  _phoneController,
+                  "Số điện thoại",
+                  Icons.phone_android_rounded,
+                  (v) => (v == null || !_phoneRegExp.hasMatch(v))
+                      ? "SĐT phải 10 số, bắt đầu bằng 0"
+                      : null,
+                  keyboard: TextInputType.phone,
+                ),
+
+                const SizedBox(height: 8),
+                _buildGenderSelector(),
+
+                const SizedBox(height: 32),
+                _buildSectionLabel("BẢO MẬT & ĐỊA CHỈ"),
+                _buildField(
+                  _passController,
+                  "Mật khẩu",
+                  Icons.lock_outline_rounded,
+                  (v) => v!.length < 6 ? "Tối thiểu 6 ký tự" : null,
+                  isPass: true,
+                ),
+                _buildField(
+                  _confirmPassController,
+                  "Xác nhận mật khẩu",
+                  Icons.shield_outlined,
+                  (v) => v != _passController.text
+                      ? "Mật khẩu không khớp"
+                      : null,
+                  isPass: true,
+                ),
+
+                _buildField(
+                  _addressController,
+                  "Địa chỉ",
+                  Icons.location_on_outlined,
+                  null,
+                ),
+
+                const SizedBox(height: 40),
+
+                _buildMainButton("ĐĂNG KÝ TÀI KHOẢN"),
+
+                const SizedBox(height: 40),
+              ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBackgroundEffect() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: RadialGradient(
-          center: Alignment(0.7, -0.6),
-          radius: 1.3,
-          colors: [Color(0xFF09152E), kDeepBlack],
         ),
       ),
     );
   }
+
 
   Widget _buildSectionLabel(String text) {
     return Padding(
@@ -295,15 +270,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
         obscureText: isPass ? _isObscure : false,
         keyboardType: keyboard,
         validator: validator,
-        style: const TextStyle(color: Colors.white, fontSize: 15),
-        cursorColor: kPrimaryCyan,
+        style: const TextStyle(color: kTextPrimary, fontSize: 15), // Chữ gõ vào màu đen
+        cursorColor: kPrimaryOrange, // Con trỏ màu cam
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(
-            color: Colors.white.withOpacity(0.2),
+          hintStyle: const TextStyle(
+            color: kTextSecondary,
             fontSize: 14,
           ),
-          prefixIcon: Icon(icon, color: kSecondaryGreen, size: 21),
+          prefixIcon: Icon(icon, color: kPrimaryOrange, size: 21), // Icon màu cam
           suffixIcon: isPass
               ? IconButton(
                   icon: Icon(
@@ -322,11 +297,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: kIdleBorder, width: 1.2),
+            borderSide: const BorderSide(color: kIdleBorder, width: 1.2), // Viền xám nhạt
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: kPrimaryCyan, width: 1.5),
+            borderSide: const BorderSide(color: kPrimaryOrange, width: 1.5), // Focus viền cam
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
@@ -351,9 +326,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       height: 50,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFF020611),
+        color: kBackground,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: kIdleBorder), // Viền xám
       ),
       child: Row(
         children: ["Nam", "Nữ", "Khác"].map((g) {
@@ -367,20 +342,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  gradient: isSelected
-                      ? const LinearGradient(
-                          colors: [kSecondaryGreen, kPrimaryCyan],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
+                  color: isSelected ? kPrimaryOrange : Colors.transparent, // Nền cam nếu chọn
                 ),
                 child: Text(
                   g,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : kTextSecondary,
+                    color: isSelected ? Colors.white : kTextSecondary, // Chữ trắng nếu chọn, xám nếu chưa
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontSize: 13,
                   ),
                 ),
               ),
@@ -391,63 +360,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // HÀM BUILD BUTTON TỪ NHÁNH HEAD ĐÃ ĐƯỢC GIỮ LẠI ĐẦY ĐỦ
   Widget _buildMainButton(String text) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 54,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: kPrimaryCyan.withOpacity(0.25),
-            blurRadius: 16,
-            spreadRadius: -2,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
       child: ElevatedButton(
         onPressed: _isLoading ? null : _handleRegister,
         style: ElevatedButton.styleFrom(
-          padding: EdgeInsets.zero,
+          backgroundColor: kPrimaryOrange, // Nút cam nguyên khối giống hệt Đăng nhập
+          foregroundColor: Colors.white,
+          elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
         ),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            gradient: const LinearGradient(
-              colors: [kSecondaryGreen, kPrimaryCyan],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Center(
-            child: _isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.5,
-                    ),
-                  )
-                : Text(
-                    text,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 2.0,
-                    ),
-                  ),
-          ),
-        ),
+        child: _isLoading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : Text(
+                text,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.0,
+                ),
+              ),
       ),
     );
   }
+
 }

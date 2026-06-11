@@ -4,12 +4,18 @@ import 'package:smart_elec/providers/device_provider.dart';
 import 'package:smart_elec/models/device.dart';
 import 'package:smart_elec/Widgets/custom_loading_button.dart';
 
-// ─── Design Tokens (Đồng bộ với HomeScreen) ──────────────────────
-const _kBgColor = Color(0xff081125);
-const _kCardColor = Color(0xff111B3D);
-const _kAccentColor = Color(0xff00E676); // Neon Green
-const _kSecondaryColor = Color(0xff00B0FF); // Electric Blue
-const _kSubTextColor = Color(0xff9EA9C1);
+class AppColors {
+  static const Color kPrimaryOrange = Color(0xFFFF7A00);
+  static const Color kDarkOrange = Color(0xFFE65C00); 
+  static const Color kLightOrange = Color(0xFFFFF3E0); 
+  static const Color kBackground = Color(0xFFF9FAFB); 
+  static const Color kInputBackground = Colors.white;
+  static const Color kTextPrimary = Color(0xFF1F2937);
+  static const Color kTextSecondary = Color(0xFF6B7280);
+  static const Color kMutedGrey = Color(0xFF9CA3AF);
+  static const Color kErrorRed = Color(0xFFEF4444);
+  static const Color kIdleBorder = Color(0xFFD1D5DB);
+}
 
 class AddDeviceScreen extends StatefulWidget {
   final Device? device;
@@ -114,7 +120,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: isError ? Colors.redAccent : _kAccentColor,
+        backgroundColor: isError ? AppColors.kErrorRed : AppColors.kPrimaryOrange,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -136,28 +142,28 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   InputDecoration _inputDeco(String hint, IconData icon, {String? suffix}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Colors.white24, fontSize: 14),
-      prefixIcon: Icon(icon, color: _kAccentColor.withOpacity(0.7), size: 22),
+      hintStyle: const TextStyle(color: AppColors.kMutedGrey, fontSize: 14),
+      prefixIcon: Icon(icon, color: AppColors.kPrimaryOrange, size: 22),
       suffixText: suffix,
-      suffixStyle: const TextStyle(color: _kSubTextColor, fontSize: 13),
+      suffixStyle: const TextStyle(color: AppColors.kTextSecondary, fontSize: 13),
       filled: true,
-      fillColor: _kCardColor,
+      fillColor: AppColors.kInputBackground,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+        borderSide: const BorderSide(color: AppColors.kIdleBorder),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+        borderSide: const BorderSide(color: AppColors.kIdleBorder),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: _kAccentColor, width: 1),
+        borderSide: const BorderSide(color: AppColors.kPrimaryOrange, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1),
+        borderSide: const BorderSide(color: AppColors.kErrorRed, width: 1),
       ),
     );
   }
@@ -171,13 +177,13 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
           style: const TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 14,
-            color: Colors.white,
+            color: AppColors.kTextPrimary,
           ),
           children: [
             if (required)
               const TextSpan(
                 text: ' *',
-                style: TextStyle(color: _kAccentColor),
+                style: TextStyle(color: AppColors.kErrorRed),
               ),
           ],
         ),
@@ -190,15 +196,15 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _kBgColor,
+      backgroundColor: AppColors.kBackground,
       appBar: AppBar(
-        backgroundColor: _kBgColor,
+        backgroundColor: AppColors.kBackground,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: Colors.white,
+            color: AppColors.kTextPrimary, // Đổi sang màu chữ đậm để nổi trên nền trắng
             size: 20,
           ),
           onPressed: () => Navigator.pop(context),
@@ -207,7 +213,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
           widget.device == null ? 'THÊM THIẾT BỊ' : 'CẬP NHẬT',
           style: const TextStyle(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.kTextPrimary,
             fontSize: 16,
             letterSpacing: 1.2,
           ),
@@ -225,22 +231,22 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _kAccentColor.withOpacity(0.05),
+                  color: AppColors.kLightOrange,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _kAccentColor.withOpacity(0.1)),
+                  border: Border.all(color: AppColors.kPrimaryOrange.withOpacity(0.3)),
                 ),
                 child: const Row(
                   children: [
                     Icon(
                       Icons.info_outline_rounded,
-                      color: _kAccentColor,
+                      color: AppColors.kPrimaryOrange,
                       size: 20,
                     ),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         "Điền đầy đủ thông tin để thêm chính xác thiết bị nhé",
-                        style: TextStyle(color: _kSubTextColor, fontSize: 12),
+                        style: TextStyle(color: AppColors.kDarkOrange, fontSize: 12),
                       ),
                     ),
                   ],
@@ -251,11 +257,11 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
               _buildLabel('Loại thiết bị', required: true),
               DropdownButtonFormField<String>(
                 value: _category,
-                dropdownColor: _kCardColor,
-                style: const TextStyle(color: Colors.white, fontSize: 15),
+                dropdownColor: AppColors.kInputBackground,
+                style: const TextStyle(color: AppColors.kTextPrimary, fontSize: 15),
                 icon: const Icon(
                   Icons.keyboard_arrow_down_rounded,
-                  color: _kSubTextColor,
+                  color: AppColors.kTextSecondary,
                 ),
                 items: _categories
                     .map((c) => DropdownMenuItem(value: c, child: Text(c)))
@@ -271,7 +277,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
               _buildLabel('Thương hiệu', required: true),
               TextFormField(
                 controller: _brandNameController,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.kTextPrimary),
                 validator: (val) => val == null || val.trim().isEmpty
                     ? 'Vui lòng nhập tên hãng'
                     : null,
@@ -285,7 +291,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
               _buildLabel('Mã máy (Model Code)'),
               TextFormField(
                 controller: _modelCodeController,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.kTextPrimary),
                 decoration: _inputDeco(
                   'VD: UA55TU8000...',
                   Icons.qr_code_scanner_rounded,
@@ -296,7 +302,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
               _buildLabel('Vị trí lắp đặt'),
               TextFormField(
                 controller: _locationController,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.kTextPrimary),
                 decoration: _inputDeco(
                   'VD: Nhà bếp, Tầng 2...',
                   Icons.room_rounded,
@@ -315,7 +321,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                         TextFormField(
                           controller: _warrantyController,
                           keyboardType: TextInputType.number,
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: AppColors.kTextPrimary),
                           decoration: _inputDeco(
                             '24',
                             Icons.verified_user_rounded,
@@ -334,7 +340,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                         TextFormField(
                           controller: _maintenanceController,
                           keyboardType: TextInputType.number,
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: AppColors.kTextPrimary),
                           decoration: _inputDeco(
                             '6',
                             Icons.history_rounded,
@@ -361,9 +367,9 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
             height: 54,
             borderRadius: 14,
             gradientColors: const [
-              _kAccentColor,
-              _kSecondaryColor,
-            ], // Đồng bộ dải màu Neon của app
+              AppColors.kPrimaryOrange,
+              AppColors.kDarkOrange,
+            ], 
           ),
         ),
       ),

@@ -56,9 +56,10 @@ dependencies:
   flutter_map: ^8.3.0
   latlong2: ^0.9.1
   crypto: ^3.0.3
-  google_fonts: ^6.2.1
+  google_fonts: ^8.1.0
   google_sign_in: ^6.2.2
   firebase_auth: 6.4.0
+  flutter_svg: ^2.3.0
 
 
 dev_dependencies:
@@ -94,6 +95,10 @@ flutter:
     - assets/old.png
     - assets/zalo_icon.png
     - assets/google_icon.png
+    - assets/logo7.svg
+    - assets/giam15%.jpg
+    - assets/baoduongmaylanh.png
+    - assets/vesinhmaygiat.jpg
     - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see

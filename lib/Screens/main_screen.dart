@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart'; // Bắt buộc có để dùng ScrollDirection
 import 'home.dart';
 import 'messages_screen.dart';
 import 'appliances_screen.dart';
@@ -16,25 +17,26 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  
+  // LOGIC SCROLL: Trạng thái ẩn/hiện của BottomNav và Nút nổi AI
+  bool _isBottomNavVisible = true; 
+  
   final GlobalKey<HomeScreenState> _homeKey = GlobalKey<HomeScreenState>();
   final GlobalKey<MessagesScreenState> _messagesKey = GlobalKey<MessagesScreenState>();
 
-  // Dùng IndexedStack để giữ nguyên trạng thái của các tab khi chuyển qua lại
   late final List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
-    // Tự động cập nhật tọa độ cho khách hàng khi vào app
     LocationService.updateStatus();
-    // Kiểm tra thông báo chờ (Deep Link Grab style)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationService.checkPendingNotification();
     });
     _screens = [
       HomeScreen(key: _homeKey),
       MessagesScreen(key: _messagesKey),
-      const SizedBox(), // Chỗ trống cho Nút nổi AI
+      const SizedBox(), 
       const AppliancesScreen(),
       const ProfileScreen(),
     ];
@@ -45,65 +47,95 @@ class _MainScreenState extends State<MainScreen> {
       context,
       MaterialPageRoute(builder: (context) => const ChatScreen()),
     );
-    // Khi người dùng bấm nút back (trở về) từ ChatScreen, code sẽ tiếp tục ở đây.
-    // Gọi hàm loadHistory() của HomeScreen để tải lại danh sách
     _homeKey.currentState?.loadHistory();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // extendBody giúp Body tràn xuống dưới Navbar, giữ FAB cố định không bị SnackBar đẩy lên
-      extendBody: true, 
-      // IndexedStack giúp chuyển tab không bị load lại trang từ đầu
-      body: IndexedStack(index: _currentIndex, children: _screens),
+      extendBody: true,
+      
+      body: NotificationListener<UserScrollNotification>(
+        onNotification: (notification) {
+          if (notification.direction == ScrollDirection.reverse) {
+            
+            if (_isBottomNavVisible) {
+              setState(() {
+                _isBottomNavVisible = false;
+              });
+            }
+          } else if (notification.direction == ScrollDirection.forward) {
+            if (!_isBottomNavVisible) {
+              setState(() {
+                _isBottomNavVisible = true;
+              });
+            }
+          }
+          return true;
+        },
+        child: IndexedStack(index: _currentIndex, children: _screens),
+      ),
 
-      // Nút Nổi AI (Luôn hiện trên mọi Tab)
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openAIChat,
-        backgroundColor: Colors.transparent, // Tắt màu mặc định đi
-        elevation: 4,
-        child: Container(
-          width: 60,
-          height: 60,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            // Đổi từ màu cam quê kiểng sang Gradient Cyberpunk cực chất giống nút Login bên ngoài
-            gradient: LinearGradient(
-              colors: [Color(0xff00E676), Color(0xff00B0FF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      floatingActionButton: AnimatedScale(
+        scale: _isBottomNavVisible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.fastOutSlowIn,
+        child: FloatingActionButton(
+          onPressed: _openAIChat,
+          backgroundColor: Colors.transparent,
+          elevation: 6,
+          child: Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFF6D00).withOpacity(0.3),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFF9800), Color(0xFFFF5252)], 
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
-          ),
-          child: const Icon(
-            Icons.auto_awesome, // Dấu sao AI lấp lánh cực đẹp
-            color: Colors.white,
-            size: 28,
+            child: const Icon(
+              Icons.auto_awesome, 
+              color: Colors.white,
+              size: 28,
+            ),
           ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
-      // Thanh Navbar
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          if (index != 2) {
-            // Bỏ qua index 2 vì nó là nút AI
-            setState(() {
-              _currentIndex = index;
-            });
-            if (index == 1) {
-              _messagesKey.currentState?.refreshInbox();
+      
+      bottomNavigationBar: AnimatedSlide(
+        offset: _isBottomNavVisible ? Offset.zero : const Offset(0, 1.0),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.fastOutSlowIn,
+        child: CustomBottomNav(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            if (index != 2) {
+              setState(() {
+                _currentIndex = index;
+              });
+              if (index == 1) {
+                _messagesKey.currentState?.refreshInbox();
+              }
             }
-          }
-        },
+          },
+        ),
       ),
     );
   }
 }
 
-// ─── Component Navbar ──────────────────────────────────────────────
 class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
@@ -117,15 +149,15 @@ class CustomBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomAppBar(
-      // FIX 1: Đổi từ Colors.white sang màu xanh đen thẫm của hệ thống
-      color: const Color(0xff111B3D), 
-      height: 80, 
-      padding: EdgeInsets.zero, 
+      color: Colors.white, 
+      height: 80,
+      padding: EdgeInsets.zero,
       shape: const CircularNotchedRectangle(),
       notchMargin: 8.0,
-      elevation: 15,
-      child: SafeArea( 
-        top: false, 
+      elevation: 20, 
+      shadowColor: Colors.black.withOpacity(0.5),
+      child: SafeArea(
+        top: false,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -146,21 +178,18 @@ class CustomBottomNav extends StatelessWidget {
     required int index,
   }) {
     final isSelected = currentIndex == index;
-    
-    // FIX 2: Đổi activeColor sang xanh ngọc/neon để nổi bật trên nền tối
-    const activeColor = Color(0xff00E676);
-    // FIX 3: Đổi inactiveColor sang màu xám sáng nhẹ (grey shade) để dễ nhìn hơn trên nền tối
-    const inactiveColor = Color(0xff8E9AA6); 
+    const activeColor = Color(0xFFFF6D00);
+    const inactiveColor = Color(0xFF9E9E9E); 
 
-    return Expanded( 
+    return Expanded(
       child: GestureDetector(
         onTap: () => onTap(index),
         behavior: HitTestBehavior.opaque,
         child: Column(
-          mainAxisSize: MainAxisSize.min, 
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AnimatedContainer( 
+            AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               child: Icon(
                 icon,
@@ -168,7 +197,7 @@ class CustomBottomNav extends StatelessWidget {
                 size: isSelected ? 28 : 24,
               ),
             ),
-            const SizedBox(height: 2), 
+            const SizedBox(height: 2),
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
@@ -176,7 +205,7 @@ class CustomBottomNav extends StatelessWidget {
                 style: TextStyle(
                   color: isSelected ? activeColor : inactiveColor,
                   fontSize: 10,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
               ),

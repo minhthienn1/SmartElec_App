@@ -10,13 +10,18 @@ import '../Widgets/custom_loading_button.dart';
 import '../Widgets/booking_bottom_sheet.dart';
 
 // ─── Design Tokens (Đồng bộ với Home) ─────────────────────────────
-const _kBgColor = Color(0xff081125);
-const _kCardColor = Color(0xff111B3D);
-const _kUserBubbleColor = Color(0xff1A244D);
-const _kAccentColor = Color(0xff00E676);
-const _kSecondaryColor = Color(0xff00B0FF);
-const _kTextColor = Colors.white;
-const _kSubTextColor = Color(0xff9EA9C1);
+class AppColors {
+  static const Color kPrimaryOrange = Color(0xFFFF7A00);
+  static const Color kDarkOrange = Color(0xFFE65C00); 
+  static const Color kLightOrange = Color(0xFFFFF3E0); 
+  static const Color kBackground = Color(0xFFF9FAFB); 
+  static const Color kInputBackground = Colors.white;
+  static const Color kTextPrimary = Color(0xFF1F2937);
+  static const Color kTextSecondary = Color(0xFF6B7280);
+  static const Color kMutedGrey = Color(0xFF9CA3AF);
+  static const Color kErrorRed = Color(0xFFEF4444);
+  static const Color kIdleBorder = Color(0xFFD1D5DB);
+}
 
 class ChatMessage {
   final String text;
@@ -227,22 +232,22 @@ class _ChatScreenState extends State<ChatScreen> {
   Color _getThemeColor() {
     switch (_diagnosisCtx.riskLevel) {
       case RiskLevel.red:
-        return Colors.redAccent;
+        return AppColors.kErrorRed;
       case RiskLevel.yellow:
-        return Colors.orangeAccent;
+        return const Color(0xFFF59E0B);
       case RiskLevel.green:
-        return _kAccentColor;
+        return const Color(0xFF10B981);
       default:
-        return _kSecondaryColor;
+        return AppColors.kPrimaryOrange;
     }
   }
 
   Color _getBgColor() {
     switch (_diagnosisCtx.riskLevel) {
       case RiskLevel.red:
-        return const Color(0xff2A0808); // Nền đỏ đen ngầm cảnh báo
+       return const Color(0xFFFEF2F2); 
       default:
-        return _kBgColor; // Trả về màu nền mặc định 0xff081125
+       return AppColors.kBackground; // Trả về màu nền mặc định 0xff081125
     }
   }
 
@@ -326,7 +331,7 @@ class _ChatScreenState extends State<ChatScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true, // Cho phép sheet cuộn lên khi có bàn phím
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.kBackground,
       builder: (ctx) => BookingBottomSheet(
         sessionId: sessionId,
         deviceType: _diagnosisCtx.deviceType,
@@ -343,7 +348,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text(
-                    "✅ Đã chốt đơn! Hệ thống đang phát sóng tìm thợ quanh khu vực của bạn.",
+                    "Đã chốt đơn! Hệ thống đang phát sóng tìm thợ quanh khu vực của bạn.",
                   ),
                   backgroundColor: Colors.green,
                   behavior: SnackBarBehavior.floating,
@@ -430,12 +435,12 @@ class _ChatScreenState extends State<ChatScreen> {
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _kCardColor,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: themeColor.withOpacity(0.3), width: 1),
         boxShadow: [
           BoxShadow(
-            color: themeColor.withOpacity(0.05),
+            color: themeColor.withOpacity(0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -465,14 +470,14 @@ class _ChatScreenState extends State<ChatScreen> {
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: _kTextColor,
+                    color: AppColors.kTextPrimary,
                   ),
                 ),
                 if (ctx.symptom != null) ...[
                   const SizedBox(height: 2),
                   Text(
                     ctx.symptom!,
-                    style: const TextStyle(color: _kSubTextColor, fontSize: 12),
+                    style: const TextStyle(color: AppColors.kTextSecondary, fontSize: 12),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -492,7 +497,7 @@ class _ChatScreenState extends State<ChatScreen> {
               style: TextStyle(
                 color: themeColor,
                 fontSize: 10,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -505,7 +510,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     if (_isRedAlert && !_bannerDismissed) HapticFeedback.heavyImpact();
     return Scaffold(
-      backgroundColor: _getBgColor(),
+      backgroundColor: AppColors.kBackground,
       appBar: _buildAppBar(),
       body: SafeArea(
         child: Column(
@@ -548,15 +553,15 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+ PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: _kBgColor,
-      elevation: 0,
+      backgroundColor: Colors.white, 
+      elevation: 0.5, // Tạo đổ bóng cực nhẹ để tách biệt với body
       surfaceTintColor: Colors.transparent,
-      iconTheme: const IconThemeData(color: Colors.white),
+      iconTheme: const IconThemeData(color: AppColors.kTextPrimary),
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
-        child: Divider(height: 1, color: Colors.white.withOpacity(0.05)),
+        child: Divider(height: 1, color: AppColors.kIdleBorder.withOpacity(0.4)), // Sửa viền phân cách sáng màu
       ),
       title: Row(
         children: [
@@ -566,12 +571,12 @@ class _ChatScreenState extends State<ChatScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: const LinearGradient(
-                colors: [_kAccentColor, _kSecondaryColor],
+                colors: [AppColors.kPrimaryOrange, AppColors.kDarkOrange], // Chuyển sang Gradient Cam chủ đạo
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               boxShadow: [
-                BoxShadow(color: _kAccentColor.withOpacity(0.3), blurRadius: 8),
+                BoxShadow(color: AppColors.kPrimaryOrange.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 2)),
               ],
             ),
             child: const Icon(
@@ -587,7 +592,7 @@ class _ChatScreenState extends State<ChatScreen> {
               Text(
                 "SmartElec",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.kTextPrimary, // Đổi sang chữ tối màu để nổi bật trên nền trắng
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
@@ -595,7 +600,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               Text(
                 "AI Chẩn đoán thiết bị",
-                style: TextStyle(color: _kSubTextColor, fontSize: 11),
+                style: TextStyle(color: AppColors.kTextSecondary, fontSize: 11), // Dùng màu chữ phụ chuẩn
               ),
             ],
           ),
@@ -603,7 +608,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.refresh_rounded, color: _kSubTextColor),
+          icon: const Icon(Icons.refresh_rounded, color: AppColors.kTextSecondary), // Đổi màu icon hành động
           tooltip: "Reset phiên",
           onPressed: _resetSession,
         ),
@@ -650,7 +655,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 SizedBox(height: 2),
                 Text(
                   'Phát hiện rủi ro cao — Ngắt điện ngay lập tức!',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                  style: TextStyle(color: Color.fromARGB(179, 0, 0, 20), fontSize: 12),
                 ),
               ],
             ),
@@ -673,23 +678,20 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildMessageBubble(ChatMessage msg) {
     final isUser = msg.isUser;
     final state = msg.state;
-   final isReadyToBook = state != null && (
-    state['phase'] == 'READY_TO_BOOK' || 
-    state['is_booking_triggered'] == true || 
-    state['risk'] == 'RED'
-     );
+    final isReadyToBook = state != null && (
+        state['phase'] == 'READY_TO_BOOK' || 
+        state['is_booking_triggered'] == true || 
+        state['risk'] == 'RED'
+    );
     final isRedRisk = state != null && state['risk'] == 'RED';
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
-        crossAxisAlignment: isUser
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
+        crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: isUser
-                ? MainAxisAlignment.end
-                : MainAxisAlignment.start,
+            mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (!isUser) ...[
@@ -699,7 +701,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [_kAccentColor, _kSecondaryColor],
+                      colors: [AppColors.kPrimaryOrange, AppColors.kDarkOrange], // Đồng bộ avatar AI sang tone Cam
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -714,12 +716,10 @@ class _ChatScreenState extends State<ChatScreen> {
               ],
               Flexible(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: isUser ? _kUserBubbleColor : _kCardColor,
+                    // User: Nền cam, AI: Nền trắng tinh khôi
+                    color: isUser ? AppColors.kPrimaryOrange : Colors.white,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(20),
                       topRight: const Radius.circular(20),
@@ -728,18 +728,24 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     border: Border.all(
                       color: isRedRisk
-                          ? Colors.redAccent.withOpacity(0.5)
-                          : Colors.white.withOpacity(0.05),
+                          ? AppColors.kErrorRed.withOpacity(0.6)
+                          : (isUser ? Colors.transparent : AppColors.kIdleBorder.withOpacity(0.5)),
                       width: 1,
                     ),
+                    boxShadow: [
+                      if (!isUser) // Thêm đổ bóng nhẹ cho bong bóng chat của AI nhìn sang trọng hơn
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                    ],
                   ),
                   constraints: BoxConstraints(
                     maxWidth: MediaQuery.of(context).size.width * 0.78,
                   ),
                   child: Column(
-                    crossAxisAlignment: isUser
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
+                    crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                     children: [
                       if (msg.imageBytes != null) ...[
                         ClipRRect(
@@ -756,28 +762,29 @@ class _ChatScreenState extends State<ChatScreen> {
                         MarkdownBody(
                           data: msg.text,
                           styleSheet: MarkdownStyleSheet(
-                            p: const TextStyle(
-                              color: Colors.white,
+                            p: TextStyle(
+                              // Phân tách màu: Chữ trắng cho user, chữ tối màu cho AI
+                              color: isUser ? Colors.white : AppColors.kTextPrimary,
                               fontSize: 14.5,
                               height: 1.5,
                             ),
-                            strong: const TextStyle(
-                              color: Colors.white,
+                            strong: TextStyle(
+                              color: isUser ? Colors.white : AppColors.kTextPrimary,
                               fontWeight: FontWeight.bold,
                               fontSize: 14.5,
                             ),
-                            listBullet: const TextStyle(color: _kAccentColor),
+                            listBullet: TextStyle(color: isUser ? Colors.white : AppColors.kPrimaryOrange),
                             blockquoteDecoration: BoxDecoration(
-                              color: Colors.orangeAccent.withOpacity(0.1),
+                              color: AppColors.kLightOrange.withOpacity(0.5), // Nền blockquote chuyển sang cam nhạt
                               borderRadius: BorderRadius.circular(8),
                               border: const Border(
                                 left: BorderSide(
-                                  color: Colors.orangeAccent,
+                                  color: AppColors.kPrimaryOrange,
                                   width: 3,
                                 ),
                               ),
                             ),
-                            blockquote: const TextStyle(color: Colors.white70),
+                            blockquote: TextStyle(color: isUser ? Colors.white70 : AppColors.kTextSecondary),
                           ),
                         ),
                     ],
@@ -820,13 +827,10 @@ class _ChatScreenState extends State<ChatScreen> {
                         OutlinedButton(
                           onPressed: _isBooking ? null : () {},
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(
-                              color: Colors.white.withOpacity(0.2),
+                            side: const BorderSide(
+                              color: AppColors.kIdleBorder, // Đổi viền nút từ Trắng mờ sang Xám phân cách rõ ràng
                             ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -834,7 +838,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           child: const Text(
                             "Thôi",
                             style: TextStyle(
-                              color: _kSubTextColor,
+                              color: AppColors.kTextSecondary, // Đổi màu chữ nút phụ
                               fontSize: 13,
                             ),
                           ),
@@ -847,14 +851,14 @@ class _ChatScreenState extends State<ChatScreen> {
                     children: [
                       _buildFeedbackButton(
                         Icons.thumb_up_alt_outlined,
-                        _kAccentColor,
+                        AppColors.kPrimaryOrange, // Đổi icon Thumbs Up thành màu Cam đồng bộ hệ thống
                         msg.feedback == 'like',
                         () => _handleFeedback(msg, 'like'),
                       ),
                       const SizedBox(width: 8),
                       _buildFeedbackButton(
                         Icons.thumb_down_alt_outlined,
-                        Colors.redAccent,
+                        AppColors.kErrorRed, // Đổi sang màu Đỏ báo lỗi hệ thống mới
                         msg.feedback == 'dislike',
                         () => _handleFeedback(msg, 'dislike'),
                       ),
@@ -874,7 +878,7 @@ class _ChatScreenState extends State<ChatScreen> {
     bool isActive,
     VoidCallback onTap,
   ) {
-    final color = isActive ? activeColor : _kSubTextColor;
+    final color = isActive ? activeColor : AppColors.kMutedGrey; // Đổi sang xám chuẩn
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -888,8 +892,8 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Icon(
           isActive
               ? (icon == Icons.thumb_up_alt_outlined
-                    ? Icons.thumb_up_alt_rounded
-                    : Icons.thumb_down_alt_rounded)
+                  ? Icons.thumb_up_alt_rounded
+                  : Icons.thumb_down_alt_rounded)
               : icon,
           size: 14,
           color: color,
@@ -909,7 +913,7 @@ class _ChatScreenState extends State<ChatScreen> {
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
-                colors: [_kAccentColor, _kSecondaryColor],
+                colors: [AppColors.kPrimaryOrange, AppColors.kDarkOrange], // Avatar AI tone Cam
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -924,23 +928,30 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: _kCardColor,
+              color: Colors.white, // Nền trắng sáng
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
                 bottomLeft: Radius.circular(4),
                 bottomRight: Radius.circular(20),
               ),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
+              border: Border.all(color: AppColors.kIdleBorder.withOpacity(0.5)), // Viền xám nhạt
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: const _AnimatedTypingDots(),
+            child: const _AnimatedTypingDots(), // Nếu class này có định nghĩa màu bên trong, bạn nhớ vào đó sửa thành kPrimaryOrange nhé
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+ Widget _buildEmptyState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -948,21 +959,21 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: _kCardColor,
+              color: AppColors.kLightOrange.withOpacity(0.5), // Nền cam nhạt
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
+              border: Border.all(color: AppColors.kPrimaryOrange.withOpacity(0.2)),
             ),
             child: const Icon(
               Icons.smart_toy_rounded,
               size: 48,
-              color: _kSubTextColor,
+              color: AppColors.kPrimaryOrange, // Icon cam nổi bật
             ),
           ),
           const SizedBox(height: 20),
           const Text(
             "SmartElec sẵn sàng hỗ trợ",
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.kTextPrimary, // Chữ tiêu đề tối màu
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -970,7 +981,7 @@ class _ChatScreenState extends State<ChatScreen> {
           const SizedBox(height: 8),
           const Text(
             "Mô tả tình trạng hoặc gửi ảnh thiết bị",
-            style: TextStyle(color: _kSubTextColor, fontSize: 14),
+            style: TextStyle(color: AppColors.kTextSecondary, fontSize: 14), // Chữ mô tả xám
           ),
         ],
       ),
@@ -980,9 +991,9 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildMessageInput() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: _kBgColor,
-        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+      decoration: const BoxDecoration(
+        color: Colors.white, // Nền trắng toàn khối dưới cùng
+        border: Border(top: BorderSide(color: AppColors.kIdleBorder)), // Viền phân cách xám
       ),
       child: SafeArea(
         child: Column(
@@ -998,7 +1009,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     width: 80,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: _kAccentColor.withOpacity(0.5)),
+                      border: Border.all(color: AppColors.kPrimaryOrange.withOpacity(0.5)),
                       image: DecorationImage(
                         image: MemoryImage(_selectedImageBytes!),
                         fit: BoxFit.cover,
@@ -1013,12 +1024,12 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: const BoxDecoration(
-                          color: _kBgColor,
+                          color: AppColors.kTextPrimary, // Nút tắt ảnh màu đen
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Icons.cancel_rounded,
-                          color: Colors.white70,
+                          color: Colors.white,
                           size: 22,
                         ),
                       ),
@@ -1035,7 +1046,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     onTap: _isChatLocked || _isLoading ? null : _pickImage,
                     child: Icon(
                       Icons.image_rounded,
-                      color: _isChatLocked ? Colors.white24 : _kSubTextColor,
+                      color: _isChatLocked ? AppColors.kIdleBorder : AppColors.kTextSecondary, // Icon ảnh
                       size: 28,
                     ),
                   ),
@@ -1043,12 +1054,12 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: _kCardColor,
+                      color: AppColors.kBackground, // Ô text field xám siêu nhạt
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: _isListening
-                            ? Colors.redAccent.withOpacity(0.5)
-                            : Colors.white.withOpacity(0.05),
+                            ? AppColors.kErrorRed
+                            : AppColors.kIdleBorder.withOpacity(0.6), // Cảnh báo đỏ nếu đang thu âm
                       ),
                     ),
                     child: Row(
@@ -1063,7 +1074,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             minLines: 1,
                             maxLines: 5,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppColors.kTextPrimary, // Chữ gõ vào màu đen
                               fontSize: 15,
                             ),
                             decoration: InputDecoration(
@@ -1071,7 +1082,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   ? "Hệ thống đang tìm thợ..."
                                   : "Nhắn tin hoặc gửi ảnh...",
                               hintStyle: const TextStyle(
-                                color: Colors.white30,
+                                color: AppColors.kMutedGrey, // Chữ gợi ý màu xám
                                 fontSize: 14,
                               ),
                               border: InputBorder.none,
@@ -1093,10 +1104,10 @@ class _ChatScreenState extends State<ChatScreen> {
                                   ? Icons.mic_rounded
                                   : Icons.mic_none_rounded,
                               color: _isChatLocked
-                                  ? Colors.white24
+                                  ? AppColors.kIdleBorder
                                   : (_isListening
-                                        ? Colors.redAccent
-                                        : _kSubTextColor),
+                                      ? AppColors.kErrorRed
+                                      : AppColors.kTextSecondary), // Mic nhấp nháy đỏ khi nói
                               size: 24,
                             ),
                           ),
@@ -1116,9 +1127,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       gradient: _isChatLocked || _isLoading
                           ? null
                           : const LinearGradient(
-                              colors: [_kAccentColor, _kSecondaryColor],
+                              colors: [AppColors.kPrimaryOrange, AppColors.kDarkOrange], // Nút gửi sáng cam lên
                             ),
-                      color: _isChatLocked || _isLoading ? _kCardColor : null,
+                      color: _isChatLocked || _isLoading ? AppColors.kIdleBorder : null, // Lúc disable thì xám đi
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -1126,9 +1137,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         _isLoading
                             ? Icons.hourglass_top_rounded
                             : Icons.send_rounded,
-                        color: _isChatLocked || _isLoading
-                            ? Colors.white30
-                            : Colors.white,
+                        color: Colors.white,
                         size: 20,
                       ),
                     ),
@@ -1195,7 +1204,7 @@ class _AnimatedTypingDotsState extends State<_AnimatedTypingDots>
         const Text(
           "Đang phân tích",
           style: TextStyle(
-            color: _kSubTextColor,
+            color: AppColors.kTextSecondary,
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
@@ -1212,7 +1221,7 @@ class _AnimatedTypingDotsState extends State<_AnimatedTypingDots>
                 width: 5,
                 height: 5,
                 decoration: const BoxDecoration(
-                  color: _kAccentColor,
+                  color: AppColors.kPrimaryOrange,
                   shape: BoxShape.circle,
                 ),
               ),
