@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:smart_elec/services/api_service.dart'; 
 import 'package:smart_elec/models/user_model.dart'; 
 import 'repair_history_screen.dart';
+import 'booked_orders_screen.dart';
 
 // --- BẢNG MÀU ĐÃ CUNG CẤP ---
 class AppColors {
@@ -379,6 +380,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
 
                         const SizedBox(height: 12),
+
+                        _buildMenuTile(
+                          Icons.assignment_outlined, 
+                          "Đơn đã đặt",
+                          AppColors.kPrimaryOrange, 
+                          () { 
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const BookedOrdersScreen(),
+                              ),
+                            );
+                          },
+                        ),
+
+                        const SizedBox(height: 12), 
+
                         _buildMenuTile(
                           Icons.lock_reset_rounded,
                           "Đổi mật khẩu",

@@ -865,6 +865,35 @@ class ApiService {
     }
   }
 
+  /// Lấy danh sách các đơn đang hoạt động (Đang tìm thợ, Đang sửa...)
+  /// Gọi API: GET /chats/active/running
+  static Future<List<dynamic>> getActiveRunningSessions() async {
+  final headers = await _getHeaders();
+  try {
+    final url = '$baseUrl/chats/active/running'; 
+    // 🎯 DEBUG 1: Kiểm tra URL và Headers xem có gửi kèm Token chuẩn không
+    debugPrint("🚀 [API CALL] Đang gọi URL: $url");
+    debugPrint("📋 [HEADERS SENT]: ${jsonEncode(headers)}");
+
+    final response = await http.get(Uri.parse(url), headers: headers);
+    
+    // 🎯 DEBUG 2: In ra StatusCode và chi tiết lỗi do NestJS nhả về
+    debugPrint("📥 [HTTP STATUS CODE]: ${response.statusCode}");
+    debugPrint("📦 [SERVER RESPONSE BODY]: ${response.body}");
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      // Thay đổi message này để hiển thị mã lỗi trực tiếp lên log console
+      throw Exception('Server trả về lỗi ${response.statusCode}: ${response.body}');
+    }
+
+    return jsonDecode(response.body) as List<dynamic>;
+  } catch (e) {
+    debugPrint("🚨 [CRITICAL ERROR] Lỗi tại ApiService.getActiveRunningSessions: $e");
+    // Re-throw nguyên văn lỗi để màn hình hiển thị hoặc debug dễ hơn
+    rethrow; 
+  }
+}
+
   /// Đánh dấu tin nhắn đã đọc
   Future<void> markAsRead(int messageId) async {
     final headers = await _getHeaders();

@@ -10,6 +10,9 @@ class ChatSocketService {
   ChatSocketService._internal();
 
   IO.Socket? _socket;
+
+  IO.Socket? get socket => _socket;
+  
   final _secureStorage = SecureStorageService();
 
   bool get isConnected => _socket?.connected ?? false;
