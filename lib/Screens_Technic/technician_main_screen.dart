@@ -5,6 +5,7 @@ import 'profile_screen.dart';
 import '../Screens/chat_screen.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
+import 'tech_color.dart';
 
 class TechnicianMainScreen extends StatefulWidget {
   const TechnicianMainScreen({super.key});
@@ -22,18 +23,16 @@ class _TechnicianMainScreenState extends State<TechnicianMainScreen> {
   @override
   void initState() {
     super.initState();
-    // Tự động cập nhật tọa độ và trạng thái online khi thợ mở app
     LocationService.updateStatus();
-    // Kiểm tra xem có thông báo nào đang chờ xử lý không (Deep Link Grab style)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationService.checkPendingNotification();
     });
     _screens = [
-      const JobBoardScreen(), // Index 0
-      TechMessagesScreen(key: _messagesKey), // Index 1: Hộp thư thật
-      const SizedBox(), // Index 2: Chỗ cho FAB
-      const PlaceholderScreen(title: "Đơn của tôi"), // Index 3
-      const TechProfileScreen(), // Index 4: Đã thay Placeholder bằng màn hình thật
+      const JobBoardScreen(), 
+      TechMessagesScreen(key: _messagesKey), 
+      const SizedBox(), 
+      const PlaceholderScreen(title: "Đơn của tôi"), 
+      const TechProfileScreen(), 
     ];
   }
 
@@ -49,16 +48,15 @@ class _TechnicianMainScreenState extends State<TechnicianMainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // FIX LỖI UI: extendBody giúp Body tràn xuống dưới Navbar, giữ FAB cố định
       extendBody: true, 
       body: IndexedStack(index: _currentIndex, children: _screens),
 
       floatingActionButton: FloatingActionButton(
         onPressed: _openAIAssistant,
-        backgroundColor: const Color(0xFF00F2FF),
+        backgroundColor: TechColors.primary,
         elevation: 4,
         shape: const CircleBorder(),
-        child: const Icon(Icons.auto_awesome, color: Colors.black87, size: 30),
+        child: const Icon(Icons.auto_awesome, color: Colors.white, size: 30),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
@@ -83,7 +81,7 @@ class _TechnicianMainScreenState extends State<TechnicianMainScreen> {
 
   Widget _buildNavItem({required IconData icon, required String label, required int index}) {
     final isSelected = _currentIndex == index;
-    const activeColor = Color(0xFF3B82F6);
+    const activeColor = TechColors.primary;
     final inactiveColor = Colors.grey.shade400;
 
     return InkWell(
@@ -124,7 +122,7 @@ class TechAIAssistantBottomSheet extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                const Icon(Icons.auto_awesome, color: Color(0xFF00F2FF)),
+                const Icon(Icons.auto_awesome, color: TechColors.primary, size: 28),
                 const SizedBox(width: 12),
                 const Text("Trợ lý Kỹ thuật AI", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 const Spacer(),
@@ -154,12 +152,19 @@ class TechAIAssistantBottomSheet extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: ListTile(
-        leading: const Icon(Icons.bolt, color: Colors.amber),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: TechColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.bolt, color: TechColors.primary),
+        ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(desc, style: const TextStyle(fontSize: 12)),
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
-          Navigator.pop(context); // Đóng BottomSheet
+          Navigator.pop(context); 
           Navigator.push(
             context,
             MaterialPageRoute(

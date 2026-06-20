@@ -991,9 +991,16 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildMessageInput() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white, // Nền trắng toàn khối dưới cùng
-        border: Border(top: BorderSide(color: AppColors.kIdleBorder)), // Viền phân cách xám
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        // 1. SỬA ĐIỂM CỨNG NHẤT: Bỏ đường line viền top sắc lạnh, thay bằng bóng đổ mờ hắt nhẹ lên trên
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: SafeArea(
         child: Column(
@@ -1024,7 +1031,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: const BoxDecoration(
-                          color: AppColors.kTextPrimary, // Nút tắt ảnh màu đen
+                          color: AppColors.kTextPrimary, 
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -1046,7 +1053,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     onTap: _isChatLocked || _isLoading ? null : _pickImage,
                     child: Icon(
                       Icons.image_rounded,
-                      color: _isChatLocked ? AppColors.kIdleBorder : AppColors.kTextSecondary, // Icon ảnh
+                      // 2. ĐỔI MÀU ICON: Từ xám kTextSecondary sang kPrimaryOrange để "tone sur tone" với nút gửi
+                      color: _isChatLocked ? AppColors.kIdleBorder : AppColors.kPrimaryOrange, 
                       size: 28,
                     ),
                   ),
@@ -1054,12 +1062,13 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppColors.kBackground, // Ô text field xám siêu nhạt
+                      color: AppColors.kBackground, 
                       borderRadius: BorderRadius.circular(24),
+                      // 3. LÀM MỀM Ô NHẬP LIỆU: Giảm opacity của viền từ 0.6[cite: 4] xuống 0.2 để nó tệp vào nền xám nhạt tự nhiên hơn
                       border: Border.all(
                         color: _isListening
                             ? AppColors.kErrorRed
-                            : AppColors.kIdleBorder.withOpacity(0.6), // Cảnh báo đỏ nếu đang thu âm
+                            : AppColors.kIdleBorder.withOpacity(0.2), 
                       ),
                     ),
                     child: Row(
@@ -1074,7 +1083,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             minLines: 1,
                             maxLines: 5,
                             style: const TextStyle(
-                              color: AppColors.kTextPrimary, // Chữ gõ vào màu đen
+                              color: AppColors.kTextPrimary, 
                               fontSize: 15,
                             ),
                             decoration: InputDecoration(
@@ -1082,7 +1091,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   ? "Hệ thống đang tìm thợ..."
                                   : "Nhắn tin hoặc gửi ảnh...",
                               hintStyle: const TextStyle(
-                                color: AppColors.kMutedGrey, // Chữ gợi ý màu xám
+                                color: AppColors.kMutedGrey, 
                                 fontSize: 14,
                               ),
                               border: InputBorder.none,
@@ -1107,7 +1116,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   ? AppColors.kIdleBorder
                                   : (_isListening
                                       ? AppColors.kErrorRed
-                                      : AppColors.kTextSecondary), // Mic nhấp nháy đỏ khi nói
+                                      : AppColors.kTextSecondary), 
                               size: 24,
                             ),
                           ),
@@ -1127,9 +1136,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       gradient: _isChatLocked || _isLoading
                           ? null
                           : const LinearGradient(
-                              colors: [AppColors.kPrimaryOrange, AppColors.kDarkOrange], // Nút gửi sáng cam lên
+                              colors: [AppColors.kPrimaryOrange, AppColors.kDarkOrange], 
                             ),
-                      color: _isChatLocked || _isLoading ? AppColors.kIdleBorder : null, // Lúc disable thì xám đi
+                      color: _isChatLocked || _isLoading ? AppColors.kIdleBorder : null, 
                       shape: BoxShape.circle,
                     ),
                     child: Center(

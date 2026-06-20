@@ -40,7 +40,7 @@ class _QuoteBottomSheetState extends State<QuoteBottomSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('✅ Đã gửi báo giá thành công!'),
-            backgroundColor: Colors.green,
+            backgroundColor: Color(0xFF10B981), 
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -50,7 +50,7 @@ class _QuoteBottomSheetState extends State<QuoteBottomSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('❌ Lỗi: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: const Color(0xFFE53935), 
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -70,7 +70,7 @@ class _QuoteBottomSheetState extends State<QuoteBottomSheet> {
         right: 20,
       ),
       decoration: const BoxDecoration(
-        color: Color(0xff081125), // Nền tối đồng bộ với chat_screen
+        color: Colors.white, 
         borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
       child: SafeArea(
@@ -86,7 +86,7 @@ class _QuoteBottomSheetState extends State<QuoteBottomSheet> {
                   width: 50,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: Colors.grey[300], 
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
@@ -94,14 +94,14 @@ class _QuoteBottomSheetState extends State<QuoteBottomSheet> {
               const SizedBox(height: 20),
               const Row(
                 children: [
-                  Icon(Icons.receipt_long, color: Colors.blueAccent),
+                  Icon(Icons.receipt_long_rounded, color: Color(0xFF1565C0)),
                   SizedBox(width: 8),
                   Text(
                     "Tạo Báo Giá Mới",
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Color(0xFF1A1A1A), 
                     ),
                   ),
                 ],
@@ -111,7 +111,7 @@ class _QuoteBottomSheetState extends State<QuoteBottomSheet> {
                 _titleController,
                 "Tiêu đề dịch vụ",
                 "VD: Thay lốc tủ lạnh Samsung",
-                Icons.build,
+                Icons.build_rounded,
               ),
               const SizedBox(height: 16),
               _buildTextField(
@@ -135,7 +135,7 @@ class _QuoteBottomSheetState extends State<QuoteBottomSheet> {
                 onPressed: _submit,
                 height: 55,
                 borderRadius: 15,
-                gradientColors: [Colors.blueAccent, Colors.blue.shade700],
+                gradientColors: const [Color(0xFF1565C0), Color(0xFF1565C0)], 
               ),
             ],
           ),
@@ -154,24 +154,32 @@ class _QuoteBottomSheetState extends State<QuoteBottomSheet> {
     return TextFormField(
       controller: ctrl,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500), 
       validator: (v) =>
           v == null || v.isEmpty ? "Vui lòng nhập thông tin" : null,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white60),
+        labelStyle: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.normal),
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.white30),
-        prefixIcon: Icon(icon, color: Colors.white70),
+        hintStyle: TextStyle(color: Colors.grey[400]),
+        prefixIcon: Icon(icon, color: const Color(0xFF1565C0)), 
         filled: true,
-        fillColor: const Color(0xff1A244D), // Hộp nhập màu tối cao cấp
+        fillColor: const Color(0xFFF4F6F9), 
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: Colors.grey.shade200, width: 1), 
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF1565C0), width: 1.5), 
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: 12,
+          vertical: 16, 
         ),
       ),
     );

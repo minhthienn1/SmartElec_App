@@ -17,7 +17,7 @@ import 'package:smart_elec/Screens/register_screen.dart';
 import 'package:smart_elec/Screens/main_screen.dart';
 import 'package:smart_elec/Screens_Technic/job_board_screen.dart';
 import 'package:smart_elec/Screens_Technic/technician_main_screen.dart';
-import 'package:smart_elec/Screens_Technic/chat_screen.dart';
+import 'package:smart_elec/Screens_Technic/chat_screen_tech.dart';
 import 'package:smart_elec/Screens_Technic/job_detail_screen.dart';
 
 import 'package:smart_elec/services/notification_service.dart';

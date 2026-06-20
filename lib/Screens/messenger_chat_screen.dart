@@ -1307,7 +1307,12 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
   Widget _buildBottomInput() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      decoration: BoxDecoration(color: Colors.white,border: Border(top: BorderSide(color: AppColors.kIdleBorder.withOpacity(0.5))),),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: AppColors.kIdleBorder.withOpacity(0.3)),
+        ),
+      ),
       child: SafeArea(
         child: Row(
           children: [
@@ -1317,30 +1322,46 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
             ),
             const SizedBox(width: 4),
             Expanded(
-              child: TextField(
-                controller: _textController,
-                style: const TextStyle(color: AppColors.kTextPrimary),
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _handleSendText(),
-                onChanged: (val) {
-                  // Text change handler
-                },
-                decoration: InputDecoration(
-                  hintText: 'Nhắn tin...',
-                  hintStyle: const TextStyle(color: Colors.white30),
-                  filled: true,
-                  fillColor: AppColors.kBackground,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white, 
+                  borderRadius: BorderRadius.circular(24), 
+                  border: Border.all(
+                    color: AppColors.kIdleBorder.withOpacity(0.6), 
+                    width: 1.0,
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide.none,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06), 
+                      blurRadius: 6,                         
+                      offset: const Offset(0, 2),            
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _textController,
+                  style: const TextStyle(color: AppColors.kTextPrimary, fontSize: 15),
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _handleSendText(),
+                  onChanged: (val) {
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Nhắn tin...',
+                    
+                    hintStyle: const TextStyle(color: AppColors.kMutedGrey, fontSize: 14),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 11,
+                    ),
+                    
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
                   ),
                 ),
               ),
             ),
+            const SizedBox(width: 4),
             IconButton(
               icon: Icon(Icons.send, color: primaryOrange),
               onPressed: _handleSendText,
