@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:smart_elec/providers/user_provider.dart';
 import 'package:smart_elec/services/secure_storage_service.dart';
 import '../models/chat_message.dart' as model;
-import 'chat_screen.dart';
+import 'chat_screen_tech.dart';
 import '../services/api_service.dart';
 import '../services/chat_socket_service.dart';
 
@@ -39,13 +39,11 @@ class TechMessagesScreenState extends State<TechMessagesScreen> {
   }
 
   Future<void> _initData() async {
-    // 1. Ưu tiên lấy từ Provider
     final user = Provider.of<UserProvider>(context, listen: false).user;
     if (user != null) {
       setState(() => currentUserId = user.id);
     }
 
-    // 2. Fallback: Decode JWT nếu Provider chưa sẵn (standalone / push notification)
     if (currentUserId == null) {
       final idFromToken = await _getUserIdFromToken();
       if (idFromToken != null && mounted) {
@@ -133,19 +131,28 @@ class TechMessagesScreenState extends State<TechMessagesScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          "Hộp thư khách hàng",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+      title: const Text(
+        "Hộp thư khách hàng",
+        style: TextStyle(
+          fontWeight: FontWeight.w700, 
+          color: Color(0xFF1A1A1A), 
+          fontSize: 20
         ),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.blueAccent),
-            onPressed: _fetchSessions,
-          ),
-        ],
       ),
+      backgroundColor: Colors.white,
+      elevation: 0,
+      scrolledUnderElevation: 0, // Ngăn Material 3 tự đổi màu nền khi cuộn
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1.0),
+        child: Container(color: Colors.grey[200], height: 1.0),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh_rounded, color: Color(0xFF1565C0)),
+          onPressed: _fetchSessions,
+        ),
+      ],
+    ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -179,33 +186,25 @@ class TechMessagesScreenState extends State<TechMessagesScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 28,
-                                backgroundColor: Colors.blueAccent.withOpacity(
-                                  0.1,
-                                ),
+                                backgroundColor: const Color(0xFF1565C0).withOpacity(0.08), // Màu nền dịu hơn
                                 backgroundImage: customer['avatarUrl'] != null
                                     ? NetworkImage(customer['avatarUrl'])
                                     : null,
                                 child: customer['avatarUrl'] == null
-                                    ? const Icon(
-                                        Icons.person,
-                                        color: Colors.blueAccent,
-                                      )
+                                    ? const Icon(Icons.person_rounded, color: Color(0xFF1565C0))
                                     : null,
                               ),
                               if (isUnread)
                                 Positioned(
                                   right: 0,
-                                  bottom: 0,
+                                  bottom: 2, // Đẩy lên một chút để không lẹm viền
                                   child: Container(
                                     width: 14,
                                     height: 14,
                                     decoration: BoxDecoration(
-                                      color: Colors.blueAccent,
+                                      color: const Color(0xFFE53935), // Dùng màu đỏ nhẹ cho thông báo chưa đọc thay vì xanh để nổi bật hơn
                                       shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 2,
-                                      ),
+                                      border: Border.all(color: Colors.white, width: 2),
                                     ),
                                   ),
                                 ),
@@ -251,13 +250,14 @@ class TechMessagesScreenState extends State<TechMessagesScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.green[100],
+                                    color: const Color(0xFFF0F4F8),
                                     borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0xFFD9E2EC), width: 1),
                                   ),
                                   child: Text(
                                     _getStatusLabel(session['status']), 
                                     style: const TextStyle(
-                                      color: Colors.green,
+                                      color: Color(0xFF334E68),
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -318,21 +318,27 @@ class TechMessagesScreenState extends State<TechMessagesScreen> {
   }
 
   String _getStatusLabel(String status) {
-    switch (status) {
+    switch (status.toUpperCase()) {
       case 'MATCHED':
         return "Mới nhận";
       case 'ARRIVING':
+      case 'EN_ROUTE': 
         return "Đang tới";
       case 'ARRIVED':
         return "Đã tới nơi";
       case 'QUOTING':
         return "Chờ duyệt giá";
       case 'REPAIRING':
+      case 'IN_PROGRESS': 
         return "Đang sửa";
       case 'COMPLETED':
         return "Hoàn thành";
+      case 'CANCELLED':
+        return "Đã hủy";
       default:
-        return status;
+        return status.isNotEmpty 
+          ? '${status[0].toUpperCase()}${status.substring(1).toLowerCase()}' 
+          : status;
     }
   }
 }

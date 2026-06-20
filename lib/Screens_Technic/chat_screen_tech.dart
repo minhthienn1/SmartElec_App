@@ -30,7 +30,7 @@ class TechChatScreen extends StatefulWidget {
 class _TechChatScreenState extends State<TechChatScreen> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final Color primaryBlue = Colors.blueAccent;
+  final Color primaryBlue = const Color(0xFF1565C0);
   final ImagePicker _picker = ImagePicker();
 
   late ChatSocketService _socketService;
@@ -56,7 +56,6 @@ class _TechChatScreenState extends State<TechChatScreen> {
   }
 
   Future<void> _initChat() async {
-    // ✅ PRODUCTION: Chỉ lấy userId từ UserProvider (đã được load sẵn từ Splash/Main Screen)
     final user = Provider.of<UserProvider>(context, listen: false).user;
     if (user != null) {
       setState(() => currentUserId = user.id);
@@ -69,7 +68,6 @@ class _TechChatScreenState extends State<TechChatScreen> {
       return;
     }
 
-    // Lấy trạng thái ban đầu của phiên chat ngay lập tức từ Server
     try {
       final session = await ApiService.getSessionById(widget.sessionId);
       if (mounted) {
@@ -85,7 +83,6 @@ class _TechChatScreenState extends State<TechChatScreen> {
     }
 
     await _loadChatHistory();
-    // Đánh dấu đã xem toàn bộ khi vừa vào phòng
     ApiService().markAllAsRead(widget.sessionId);
 
     _socketService = ChatSocketService();
@@ -251,7 +248,7 @@ class _TechChatScreenState extends State<TechChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff081125),
+      backgroundColor: Colors.white,
       appBar: _buildAppBar(),
       body: SafeArea(
         child: Column(
@@ -291,7 +288,6 @@ class _TechChatScreenState extends State<TechChatScreen> {
                 ),
               ),
             _buildStateActionBanner(),
-            // Nếu đơn đã xong/hủy thì ẩn luôn cả khung nhập chat, nếu chưa thì hiện
             if (_sessionStatus != JobStatus.completed && _sessionStatus != JobStatus.cancelled)
               _buildBottomInput(),
           ],
@@ -351,18 +347,24 @@ class _TechChatScreenState extends State<TechChatScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: const Color(0xff0e1938),
-      elevation: 0.5,
-      iconTheme: const IconThemeData(color: Colors.white),
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent, // Ngăn Android 12+ ám màu
+      elevation: 0,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1.0),
+        child: Container(color: Colors.grey.shade200, height: 1.0), // Đường viền dưới mỏng, tinh tế
+      ),
+      iconTheme: const IconThemeData(color: Colors.black87),
       title: Row(
         children: [
           CircleAvatar(
             radius: 18,
+            backgroundColor: primaryBlue.withOpacity(0.1),
             backgroundImage: widget.receiver.avatarUrl != null
                 ? NetworkImage(widget.receiver.avatarUrl!)
                 : null,
             child: widget.receiver.avatarUrl == null
-                ? const Icon(Icons.person)
+                ? Icon(Icons.person, color: primaryBlue)
                 : null,
           ),
           const SizedBox(width: 10),
@@ -375,7 +377,7 @@ class _TechChatScreenState extends State<TechChatScreen> {
                     Text(
                       widget.receiver.fullName,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: Colors.black87,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -401,6 +403,7 @@ class _TechChatScreenState extends State<TechChatScreen> {
                         ? Colors.green
                         : Colors.grey,
                     fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -410,7 +413,7 @@ class _TechChatScreenState extends State<TechChatScreen> {
       ),
       actions: [
         PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert, color: Colors.blueAccent),
+          icon: const Icon(Icons.more_vert, color: Colors.black87),
           onSelected: (value) async {
             if (value == 'call') {
               _handleCallCustomer();
@@ -602,7 +605,7 @@ class _TechChatScreenState extends State<TechChatScreen> {
   Widget _buildMessageBubble(ChatMessage message) {
     final isMe = message.senderId == currentUserId;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 4),
       child: Column(
         crossAxisAlignment: isMe
             ? CrossAxisAlignment.end
@@ -619,7 +622,7 @@ class _TechChatScreenState extends State<TechChatScreen> {
                   padding: const EdgeInsets.only(right: 8),
                   child: CircleAvatar(
                     radius: 14,
-                    backgroundColor: primaryBlue.withOpacity(0.1),
+                    backgroundColor: const Color(0xFF1565C0).withOpacity(0.1), // Cập nhật: Nền avatar xanh nhạt
                     backgroundImage: message.sender?.avatarUrl != null
                         ? NetworkImage(message.sender!.avatarUrl!)
                         : null,
@@ -629,8 +632,8 @@ class _TechChatScreenState extends State<TechChatScreen> {
                                     widget.receiver.fullName)
                                 .substring(0, 1)
                                 .toUpperCase(),
-                            style: TextStyle(
-                              color: primaryBlue,
+                            style: const TextStyle(
+                              color: Color(0xFF1565C0), // Cập nhật: Chữ avatar màu xanh
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),
@@ -642,25 +645,43 @@ class _TechChatScreenState extends State<TechChatScreen> {
                 child: Container(
                   padding: message.type == MessageType.TEXT
                       ? const EdgeInsets.symmetric(horizontal: 16, vertical: 10)
-                      : EdgeInsets.zero,
+                      : const EdgeInsets.all(0),
                   decoration: BoxDecoration(
-                    color: message.type == MessageType.TEXT
-                        ? (isMe ? primaryBlue : const Color(0xff1A244D))
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(15),
+                    color:
+                        message.type == MessageType.IMAGE ||
+                                message.type == MessageType.QUOTE_CARD
+                            ? Colors.transparent
+                            : isMe
+                            ? const Color(0xFF1565C0) // Cập nhật: Tin nhắn của thợ màu xanh
+                            : Colors.white, // Cập nhật: Tin nhắn của khách màu trắng
+                    border: message.type == MessageType.TEXT && !isMe
+                        ? Border.all(color: Colors.grey.withOpacity(0.2)) // Cập nhật: Viền xám rất nhạt
+                        : null,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(20),
+                      topRight: const Radius.circular(20),
+                      bottomLeft: Radius.circular(isMe ? 20 : 5),
+                      bottomRight: Radius.circular(isMe ? 5 : 20),
+                    ),
+                    boxShadow: !isMe && message.type == MessageType.TEXT ? [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05), // Cập nhật: Đổ bóng đậm hơn một chút
+                        blurRadius: 8, 
+                        offset: const Offset(0, 2)
+                      )
+                    ] : [],
                   ),
                   child: _buildMessageContent(message, isMe),
                 ),
               ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
-            child: Text(
-              DateFormat('HH:mm').format(message.createdAt.toLocal()),
-              style: const TextStyle(fontSize: 10, color: Colors.grey),
-            ),
+          const SizedBox(height: 2),
+          Text(
+            DateFormat('HH:mm').format(message.createdAt.toLocal()),
+            style: const TextStyle(color: Colors.grey, fontSize: 10),
           ),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -671,7 +692,7 @@ class _TechChatScreenState extends State<TechChatScreen> {
       case MessageType.TEXT:
         return Text(
           message.content,
-          style: const TextStyle(color: Colors.white, fontSize: 15),
+          style: TextStyle(color: isMe ? Colors.white : Colors.black87, fontSize: 15),
         );
       case MessageType.IMAGE:
         return ClipRRect(
@@ -830,24 +851,23 @@ class _TechChatScreenState extends State<TechChatScreen> {
     }
   }
 
-  // 3. Thanh điều hướng trạng thái động (Trái tim của tính năng này)
   Widget _buildStateActionBanner() {
     if (_sessionStatus == JobStatus.completed || _sessionStatus == JobStatus.cancelled) {
-      return const SizedBox.shrink(); // Ẩn nút nếu đã xong hoặc hủy
+      return const SizedBox.shrink(); 
     }
 
     String buttonText = "";
-    IconData buttonIcon = Icons.arrow_forward;
-    Color buttonColor = primaryBlue;
+    IconData buttonIcon = Icons.arrow_forward_rounded; 
+    Color buttonColor = const Color(0xFF1565C0);
     VoidCallback? onPressed;
 
     final latestQuoteStatus = _getLatestQuoteStatus();
 
     switch (_sessionStatus) {
       case JobStatus.matched:
-        buttonText = "BẮT ĐẦU DI CHUYỂN TỚI KHÁCH";
-        buttonIcon = Icons.directions_car;
-        buttonColor = Colors.orange[700]!;
+        buttonText = "Bắt đầu di chuyển";
+        buttonIcon = Icons.directions_car_rounded;
+        buttonColor = primaryBlue;
         onPressed = () async {
           if (_isProcessing) return;
           setState(() => _isProcessing = true);
@@ -861,9 +881,9 @@ class _TechChatScreenState extends State<TechChatScreen> {
         break;
 
       case JobStatus.enRoute:
-        buttonText = "XÁC NHẬN ĐÃ TỚI NƠI";
-        buttonIcon = Icons.location_on;
-        buttonColor = Colors.blue[700]!;
+        buttonText = "Đã tới nơi";
+        buttonIcon = Icons.location_on_rounded;
+        buttonColor = const Color(0xFF0284C7);// Xanh dương chủ đạo
         onPressed = () async {
           if (_isProcessing) return;
           setState(() => _isProcessing = true);
@@ -877,34 +897,38 @@ class _TechChatScreenState extends State<TechChatScreen> {
         break;
 
       case JobStatus.arrived:
-        // Logic ưu tiên hàng đầu theo trạng thái báo giá
         if (latestQuoteStatus == null) {
           buttonText = "TẠO VÀ GỬI BÁO GIÁ";
-          buttonIcon = Icons.request_quote;
-          buttonColor = Colors.teal[600]!;
+          buttonIcon = Icons.request_quote_rounded;
+          buttonColor = const Color(0xFF0D9488); 
           onPressed = _showQuoteForm;
         } else if (latestQuoteStatus == 'REJECTED') {
           buttonText = "KHÁCH TỪ CHỐI - BÁO GIÁ LẠI";
-          buttonIcon = Icons.refresh;
-          buttonColor = Colors.red[600]!;
+          buttonIcon = Icons.refresh_rounded;
+          buttonColor = const Color(0xFFE53935); 
           onPressed = _showQuoteForm;
         } else if (latestQuoteStatus == 'ACCEPTED') {
           buttonText = "BẮT ĐẦU SỬA CHỮA";
-          buttonIcon = Icons.build_circle;
-          buttonColor = Colors.purple[600]!;
-          onPressed = _handleStartRepair; // Đã thêm hàm này ở trên
+          buttonIcon = Icons.build_circle_rounded;
+          buttonColor = const Color(0xFF7C3AED); 
+          onPressed = _handleStartRepair;
         } else {
-          // Trạng thái chờ khách duyệt
           return Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            color: Colors.orange.withOpacity(0.1),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: Colors.amber.shade200, width: 1)),
+            ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.orange)),
+                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFD97706))),
                 SizedBox(width: 10),
-                Text("Đang chờ khách duyệt báo giá...", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                Text(
+                  "Đang chờ khách duyệt báo giá...", 
+                  style: TextStyle(color: Color(0xFFD97706), fontWeight: FontWeight.bold, fontSize: 13)
+                ),
               ],
             ),
           );
@@ -913,32 +937,44 @@ class _TechChatScreenState extends State<TechChatScreen> {
 
       case JobStatus.inProgress:
         buttonText = "HOÀN THÀNH CÔNG VIỆC";
-        buttonIcon = Icons.check_circle;
-        buttonColor = Colors.green[700]!;
+        buttonIcon = Icons.check_circle_rounded;
+        buttonColor = const Color(0xFF10B981); 
         onPressed = _showCompleteJobDialog;
         break;
     }
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: const BoxDecoration(
-        color: Color(0xff0e1938),
-        border: Border(bottom: BorderSide(color: Colors.white12, width: 1)),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white, // Nền trắng chuẩn theme
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          )
+        ],
       ),
-      child: ElevatedButton.icon(
-        onPressed: _isProcessing ? null : onPressed,
-        icon: _isProcessing 
-          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
-          : Icon(buttonIcon, color: Colors.white),
-        label: Text(
-          buttonText,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: buttonColor,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: SafeArea( 
+        top: false,
+        child: SizedBox(
+          height: 48, 
+          child: ElevatedButton.icon(
+            onPressed: _isProcessing ? null : onPressed,
+            icon: _isProcessing 
+              ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: buttonColor, strokeWidth: 2.5)) 
+              : Icon(buttonIcon, color: buttonColor, size: 20), 
+            label: Text(
+              buttonText,
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: buttonColor), 
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: buttonColor.withOpacity(0.1), 
+              elevation: 0, 
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            ),
+          ),
         ),
       ),
     );
@@ -946,40 +982,54 @@ class _TechChatScreenState extends State<TechChatScreen> {
 
   Widget _buildBottomInput() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: const BoxDecoration(color: Color(0xff0e1938)),
-      child: Row(
-        children: [
-          IconButton(
-            icon: Icon(Icons.add_circle, color: primaryBlue, size: 28),
-            onPressed: _showAttachmentMenu,
-          ),
-          Expanded(
-            child: TextField(
-              controller: _textController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: "Nhập tin nhắn...",
-                hintStyle: const TextStyle(color: Colors.white30),
-                filled: true,
-                fillColor: const Color(0xff1A244D),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04), // Đổ bóng đồng bộ với bên khách
+            offset: const Offset(0, -4),
+            blurRadius: 10,
+          )
+        ]
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            IconButton(
+              icon: Icon(Icons.add_circle, color: primaryBlue, size: 28),
+              onPressed: _showAttachmentMenu,
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F4F8), // Màu nền hơi ngả xanh rất hợp với theme Thợ
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: primaryBlue.withOpacity(0.15), width: 1.5),
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(25),
-                  borderSide: BorderSide.none,
+                child: TextField(
+                  controller: _textController,
+                  style: const TextStyle(color: Colors.black87, fontSize: 15),
+                  decoration: InputDecoration(
+                    hintText: "Nhập tin nhắn...",
+                    hintStyle: TextStyle(color: Colors.blueGrey.shade400),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  onSubmitted: (_) => _handleSendText(),
                 ),
               ),
-              onSubmitted: (_) => _handleSendText(),
             ),
-          ),
-          IconButton(
-            icon: Icon(Icons.send, color: primaryBlue),
-            onPressed: _handleSendText,
-          ),
-        ],
+            const SizedBox(width: 4),
+            IconButton(
+              icon: Icon(Icons.send_rounded, color: primaryBlue, size: 28),
+              onPressed: _handleSendText,
+            ),
+          ],
+        ),
       ),
     );
   }

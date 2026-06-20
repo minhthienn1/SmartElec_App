@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../providers/job_provider.dart';
 import '../models/chat_session.dart';
 import '../Widgets/custom_loading_button.dart';
+import 'tech_color.dart';
 
 class JobDetailScreen extends StatefulWidget {
   final String jobId;
@@ -95,21 +96,19 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = const Color(0xff0B1B4D);
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
-      appBar: AppBar(
-        title: const Text(
-          'Chi tiết đơn sửa chữa',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        elevation: 0,
-        backgroundColor: themeColor,
-        foregroundColor: Colors.white,
+    backgroundColor: TechColors.background,
+    appBar: AppBar(
+      title: const Text(
+        'Chi tiết đơn sửa chữa',
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
       ),
-      body: _buildBody(themeColor),
-    );
+      elevation: 0,
+      backgroundColor: TechColors.navy,
+      foregroundColor: Colors.white,
+    ),
+    body: _buildBody(TechColors.navy), // Cập nhật biến truyền vào
+  );
   }
 
   Widget _buildBody(Color themeColor) {
@@ -315,7 +314,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.auto_awesome, color: Colors.amber, size: 20),
+                const Icon(Icons.auto_awesome, color: TechColors.primary, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   'Tóm tắt lỗi từ AI',
@@ -341,15 +340,15 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.amber[50],
+                  color: TechColors.primary.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.amber[200]!),
+                  border: Border.all(color: TechColors.primary.withOpacity(0.2)),
                 ),
                 child: Text(
                   session.aiSummary!,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.amber[900],
+                    color: TechColors.navy,
                     height: 1.4,
                   ),
                 ),

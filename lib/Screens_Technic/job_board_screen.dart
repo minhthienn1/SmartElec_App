@@ -292,8 +292,12 @@ class _JobBoardScreenState extends State<JobBoardScreen>
                   width: 96,
                   height: 96,
                   decoration: BoxDecoration(
-                    color: _kPrimary.withOpacity(0.08),
+                    color: _kPrimary.withOpacity(0.15), 
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: _kPrimary.withOpacity(0.3), 
+                      width: 2,
+                    ),
                   ),
                   child: Icon(
                     noJobsAtAll ? Icons.radar : Icons.filter_list_off_rounded,
@@ -527,16 +531,30 @@ class _JobBoardScreenState extends State<JobBoardScreen>
                     const SizedBox(width: 10),
                     // Nhận đơn
                     Expanded(
+                    child: Container(
+                      height: 40, 
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        
+                        gradient: LinearGradient(
+                          colors: isProcessing 
+                              ? [Colors.grey[300]!, Colors.grey[300]!] 
+                              : urgent
+                                  ? [const Color(0xFFEF5350), _kDanger] 
+                                  : [_kPrimary, const Color(0xFF0B1B4D)], 
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                      ),
                       child: ElevatedButton(
                         onPressed: isProcessing
                             ? null
                             : () => _handleAccept(job, provider),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: urgent ? _kDanger : _kPrimary,
+                          backgroundColor: Colors.transparent, 
+                          shadowColor: Colors.transparent,     
                           foregroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.grey[300],
-                          minimumSize: const Size(double.infinity, 40),
-                          elevation: 0,
+                          padding: EdgeInsets.zero,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -569,6 +587,7 @@ class _JobBoardScreenState extends State<JobBoardScreen>
                               ),
                       ),
                     ),
+                  ),
                   ],
                 ),
               ),
@@ -579,7 +598,6 @@ class _JobBoardScreenState extends State<JobBoardScreen>
     );
   }
 
-  // ─── Handlers ────────────────────────────────────────────────────
 
   Future<void> _handleAccept(dynamic job, JobProvider provider) async {
     final int jobId = job['id'] ?? 0;
