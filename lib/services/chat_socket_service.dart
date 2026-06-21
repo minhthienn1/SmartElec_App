@@ -19,17 +19,17 @@ class ChatSocketService {
   bool _hasConnectedOnce = false;
 
   // Streams để UI có thể lắng nghe
-  final StreamController<Map<String, dynamic>> _messageController =
+  StreamController<Map<String, dynamic>> _messageController =
       StreamController<Map<String, dynamic>>.broadcast();
-  final StreamController<String> _connectionStatusController =
+  StreamController<String> _connectionStatusController =
       StreamController<String>.broadcast();
-  final StreamController<Map<String, dynamic>> _quoteUpdatedController =
+  StreamController<Map<String, dynamic>> _quoteUpdatedController =
       StreamController<Map<String, dynamic>>.broadcast();
-  final StreamController<Map<String, dynamic>> _inboxController =
+  StreamController<Map<String, dynamic>> _inboxController =
       StreamController<Map<String, dynamic>>.broadcast();
-  final StreamController<Map<String, dynamic>> _jobCompletedController =
+  StreamController<Map<String, dynamic>> _jobCompletedController =
       StreamController<Map<String, dynamic>>.broadcast();
-  final StreamController<Map<String, dynamic>> _jobStatusChangedController =
+  StreamController<Map<String, dynamic>> _jobStatusChangedController =
       StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Map<String, dynamic>> get onNewMessage => _messageController.stream;
@@ -207,7 +207,7 @@ class ChatSocketService {
       }
     }
 
-    // 2. Đóng tất cả StreamControllers để tránh memory leak
+    // 2. Đóng và tạo lại tất cả StreamControllers
     try {
       if (!_messageController.isClosed) {
         _messageController.close();
@@ -227,9 +227,18 @@ class ChatSocketService {
       if (!_jobStatusChangedController.isClosed) {
         _jobStatusChangedController.close();
       }
-      debugPrint('✅ ChatSocketService: Đã đóng tất cả StreamControllers');
+      
+      // Tạo lại để có thể sử dụng cho lần đăng nhập sau
+      _messageController = StreamController<Map<String, dynamic>>.broadcast();
+      _connectionStatusController = StreamController<String>.broadcast();
+      _quoteUpdatedController = StreamController<Map<String, dynamic>>.broadcast();
+      _inboxController = StreamController<Map<String, dynamic>>.broadcast();
+      _jobCompletedController = StreamController<Map<String, dynamic>>.broadcast();
+      _jobStatusChangedController = StreamController<Map<String, dynamic>>.broadcast();
+
+      debugPrint('✅ ChatSocketService: Đã reset tất cả StreamControllers');
     } catch (e) {
-      debugPrint('⚠️ ChatSocketService: Lỗi khi đóng streams - $e');
+      debugPrint('⚠️ ChatSocketService: Lỗi khi reset streams - $e');
     }
 
     debugPrint('🛑 ChatSocketService: Hoàn thành dọn dẹp hệ thống');

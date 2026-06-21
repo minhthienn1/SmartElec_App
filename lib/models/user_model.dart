@@ -7,6 +7,7 @@ class UserModel {
   final String? avatarUrl;
   final String? address;
   final String? gender;
+  final bool needsPassword;
 
   UserModel({
     required this.id,
@@ -17,6 +18,7 @@ class UserModel {
     this.avatarUrl,
     this.address,
     this.gender,
+    this.needsPassword = false,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class UserModel {
       avatarUrl: json['avatarUrl'],
       address: json['address'],
       gender: json['gender'],
+      needsPassword: json['needsPassword'] ?? false,
     );
   }
 
@@ -42,6 +45,7 @@ class UserModel {
       'avatarUrl': avatarUrl,
       'address': address,
       'gender': gender,
+      'needsPassword': needsPassword,
     };
   }
 }
