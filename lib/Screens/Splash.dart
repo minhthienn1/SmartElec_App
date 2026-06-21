@@ -6,7 +6,6 @@ import 'package:smart_elec/services/storage_service.dart';
 import 'package:smart_elec/providers/user_provider.dart';
 import 'package:smart_elec/services/chat_socket_service.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 const Color kPrimaryOrange = Color(0xFFFF6600);
@@ -65,6 +64,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 },
               );
           
+          if (!mounted) return;
           final user = Provider.of<UserProvider>(context, listen: false).user;
           if (user == null) {
             if (mounted) Navigator.pushReplacementNamed(context, '/login');
@@ -76,6 +76,12 @@ class _SplashScreenState extends State<SplashScreen> {
           
           Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
           String role = decodedToken['role'] ?? 'USER';
+
+          if (user.needsPassword) {
+            debugPrint('⚠️ User chưa đăng ký xong (Google/Zalo), điều hướng tới /set_password');
+            if (mounted) Navigator.pushReplacementNamed(context, '/set_password');
+            return;
+          }
 
           if (role == 'TECHNICIAN') {
             if (mounted) Navigator.pushReplacementNamed(context, '/tech_main');

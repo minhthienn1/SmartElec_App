@@ -56,11 +56,10 @@ dependencies:
   flutter_map: ^8.3.0
   latlong2: ^0.9.1
   crypto: ^3.0.3
-  google_fonts: ^8.1.0
+  google_fonts: ^6.3.2
   google_sign_in: ^6.2.2
   firebase_auth: 6.4.0
-  flutter_svg: ^2.3.0
-
+  flutter_svg: ^2.0.9
 
 dev_dependencies:
   flutter_test:
