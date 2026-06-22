@@ -1,7 +1,10 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_elec/providers/user_provider.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:smart_elec/services/api_service.dart'; 
 import 'package:smart_elec/models/user_model.dart'; 
 import 'repair_history_screen.dart';
@@ -29,18 +32,14 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final _secureStorage = const FlutterSecureStorage();
   UserModel? _user;
   bool _isLoading = true;
 
-  // Sử dụng màu nền mới
-  final Color _bgColor = AppColors.kBackground; 
-  // Thẻ thông tin nền sáng
-  final Color _cardColor = AppColors.kInputBackground; 
-  // Màu cam chủ đạo
-  final Color _accentColor = AppColors.kPrimaryOrange; 
+  // Trạng thái ảnh đại diện
+  Uint8List? _avatarBytes;
+  bool _isUploadingAvatar = false;
 
-  // Tạo FocusNode để quản lý trạng thái focus của textField
+  // FocusNode cho các TextField trong dialog chỉnh sửa
   final FocusNode _nameFocusNode = FocusNode();
   final FocusNode _emailFocusNode = FocusNode();
   final FocusNode _addressFocusNode = FocusNode();
@@ -72,6 +71,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       setState(() {
         _user = UserModel.fromJson(data);
+
+        // Tải ảnh đại diện từ base64 trả về cùng profile
+        final avatarBase64 = data['avatarBase64'] as String?;
+        if (avatarBase64 != null && avatarBase64.isNotEmpty) {
+          _avatarBytes = base64Decode(avatarBase64);
+        }
         _isLoading = false;
       });
     } catch (e) {
@@ -99,8 +104,142 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text("Lỗi cập nhật dữ liệu"),
-          backgroundColor: AppColors.kErrorRed, // Sử dụng màu lỗi của bảng màu
+          backgroundColor: AppColors.kErrorRed,
         ),
+      );
+    }
+  }
+
+  // --- CHỌN VÀ UPLOAD ẢNH ĐẠI DIỆN ---
+  void _showAvatarPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40, height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const Text(
+              'Cập nhật ảnh đại diện',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.kTextPrimary),
+            ),
+            const SizedBox(height: 20),
+            _buildPickerOption(
+              icon: Icons.camera_alt_rounded,
+              label: 'Chụp ảnh mới',
+              color: AppColors.kPrimaryOrange,
+              onTap: () { Navigator.pop(ctx); _pickAndUpload(ImageSource.camera); },
+            ),
+            const SizedBox(height: 12),
+            _buildPickerOption(
+              icon: Icons.photo_library_rounded,
+              label: 'Chọn từ thư viện',
+              color: AppColors.kPrimaryOrange,
+              onTap: () { Navigator.pop(ctx); _pickAndUpload(ImageSource.gallery); },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPickerOption({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.07),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: color.withOpacity(0.13), shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 16),
+            Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: color)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAndUpload(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final XFile? picked = await picker.pickImage(
+        source: source,
+        imageQuality: 100, // Cắt trước rồi mới nén
+      );
+      if (picked == null) return;
+
+      // Cắt ảnh thành hình vuông chuẩn
+      final CroppedFile? croppedFile = await ImageCropper().cropImage(
+        sourcePath: picked.path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        compressQuality: 75,
+        maxWidth: 800,
+        maxHeight: 800,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Căn chỉnh ảnh đại diện',
+            toolbarColor: AppColors.kPrimaryOrange,
+            toolbarWidgetColor: Colors.white,
+            initAspectRatio: CropAspectRatioPreset.square,
+            lockAspectRatio: true,
+          ),
+          IOSUiSettings(
+            title: 'Căn chỉnh ảnh đại diện',
+            aspectRatioLockEnabled: true,
+            resetButtonHidden: true,
+            aspectRatioPickerButtonHidden: true,
+          ),
+        ],
+      );
+
+      if (croppedFile == null) return;
+
+      setState(() => _isUploadingAvatar = true);
+      
+      final base64Result = await ApiService.uploadAvatar(croppedFile.path);
+      if (!mounted) return;
+      setState(() {
+        _avatarBytes = base64Decode(base64Result);
+        _isUploadingAvatar = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ Ảnh đại diện đã được cập nhật!'), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isUploadingAvatar = false);
+      
+      String errorMsg = e.toString().replaceAll("Exception: ", "");
+      if (errorMsg.toLowerCase().contains('camera_access_denied') || 
+          errorMsg.toLowerCase().contains('no_available_camera')) {
+        errorMsg = 'Không tìm thấy máy ảnh trên thiết bị hoặc bị từ chối quyền.';
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ Lỗi: $errorMsg'), backgroundColor: AppColors.kErrorRed, behavior: SnackBarBehavior.floating),
       );
     }
   }
@@ -437,29 +576,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.only(bottom: 20, top: 10),
       child: Column(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              // Viền cam mới cho Avatar
-              border: Border.all(color: AppColors.kPrimaryOrange, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  // Bóng cam nhạt
-                  color: AppColors.kPrimaryOrange.withOpacity(0.15),
-                  blurRadius: 15,
-                  spreadRadius: 2,
+          // Avatar có icon camera — nhấn để đổi ảnh
+          GestureDetector(
+            onTap: _isUploadingAvatar ? null : _showAvatarPicker,
+            child: Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                // Vòng viền cam bao quanh avatar
+                Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.kPrimaryOrange, width: 2.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.kPrimaryOrange.withOpacity(0.18),
+                        blurRadius: 15,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: _isUploadingAvatar
+                        // Spinner khi đang upload
+                        ? Container(
+                            color: AppColors.kLightOrange,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.kPrimaryOrange,
+                                strokeWidth: 2.5,
+                              ),
+                            ),
+                          )
+                        : _avatarBytes != null
+                            // Ảnh từ DB (bytes): luôn fit đúng, không méo dù ảnh dọc hay ngang
+                            ? Image.memory(
+                                _avatarBytes!,
+                                fit: BoxFit.cover,
+                                width: 96,
+                                height: 96,
+                              )
+                            : _user?.avatarUrl != null
+                                // Fallback: ảnh URL (nếu có)
+                                ? Image.network(
+                                    _user!.avatarUrl!,
+                                    fit: BoxFit.cover,
+                                    width: 96,
+                                    height: 96,
+                                  )
+                                // Placeholder mặc định
+                                : Container(
+                                    color: Colors.white,
+                                    child: const Icon(
+                                      Icons.person,
+                                      size: 45,
+                                      color: AppColors.kMutedGrey,
+                                    ),
+                                  ),
+                  ),
+                ),
+
+                // Icon camera nhỏ ở góc dưới phải
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: AppColors.kPrimaryOrange,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt_rounded,
+                    color: Colors.white,
+                    size: 15,
+                  ),
                 ),
               ],
-            ),
-            child: CircleAvatar(
-              radius: 45,
-              backgroundColor: Colors.white, // Nền Avatar trắng trên nền sáng
-              backgroundImage: _user?.avatarUrl != null
-                  ? NetworkImage(_user!.avatarUrl!)
-                  : null,
-              child: _user?.avatarUrl == null
-                  ? const Icon(Icons.person, size: 45, color: AppColors.kMutedGrey) // Icon màu Grey mới
-                  : null,
             ),
           ),
           const SizedBox(height: 16),
@@ -468,24 +668,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: AppColors.kTextPrimary, // Màu văn bản chính mới
+              color: AppColors.kTextPrimary,
             ),
           ),
           const SizedBox(height: 8),
-          // Cập nhật tag Role "USER" thành màu Cam nhạt
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.kLightOrange, // Nền cam nhạt
+              color: AppColors.kLightOrange,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AppColors.kPrimaryOrange.withOpacity(0.3), // Viền cam nhẹ
+                color: AppColors.kPrimaryOrange.withOpacity(0.3),
               ),
             ),
             child: const Text(
-              "USER", // Thay đổi cứng Role để test, hoặc dùng _user?.role
+              "USER",
               style: TextStyle(
-                color: AppColors.kPrimaryOrange, // Văn bản màu cam mới
+                color: AppColors.kPrimaryOrange,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1,

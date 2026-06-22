@@ -12,6 +12,7 @@ import 'package:smart_elec/providers/user_provider.dart';
 import 'package:smart_elec/models/device.dart';
 import '../models/repair_case.dart';
 import '../models/chat_session.dart';
+import 'package:http_parser/http_parser.dart';
 
 class ApiService {
   // Đọc baseUrl từ file .env, fallback về http://192.168.1.120:3000
@@ -1008,11 +1009,11 @@ class ApiService {
     try {
       final headers = await _getHeaders();
       final response = await http.patch(
-        Uri.parse('$baseUrl/chats/sessions/hide-bulk'), // Khớp với endpoint NestJS
+        Uri.parse('$baseUrl/chats/sessions/hide-bulk'),
         headers: headers,
-        body: jsonEncode({'ids': sessionIds}), 
+        body: jsonEncode({'ids': sessionIds}),
       );
-      
+
       if (response.statusCode == 200 || response.statusCode == 204) {
         return true;
       }
@@ -1022,5 +1023,51 @@ class ApiService {
       debugPrint("❌ Lỗi Exception hideMultipleSessions: $e");
       return false;
     }
+  }
+
+  /// Upload ảnh đại diện lên Backend (lưu thẳng vào Database dạng BLOB)
+  /// Trả về chuỗi base64 của ảnh để hiển thị ngay mà không cần gọi thêm API
+  static Future<String> uploadAvatar(String filePath) async {
+    // Dùng _storage (static FlutterSecureStorage) để đọc token trong static method
+    final token = await _storage.read(key: 'access_token');
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/users/upload-avatar'),
+    );
+
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    // Đính kèm file ảnh với field name là 'avatar' (khớp với @FileInterceptor('avatar') ở Backend)
+    // Thiết lập cứng contentType là image/jpeg để tránh lỗi mimetype trên backend
+    // (do image_picker có thể trả về file không có đuôi mở rộng chuẩn dẫn đến lỗi "application/octet-stream")
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'avatar',
+        filePath,
+        filename: filePath.split('/').last,
+        contentType: MediaType('image', 'jpeg'),
+      ),
+    );
+
+    final streamedResponse = await request.send().timeout(
+      const Duration(seconds: 30),
+      onTimeout: () => throw TimeoutException('Upload ảnh bị timeout. Vui lòng thử lại.'),
+    );
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      String errorMessage = 'Upload ảnh thất bại.';
+      try {
+        final body = jsonDecode(response.body);
+        errorMessage = body['message'] ?? errorMessage;
+      } catch (_) {}
+      throw Exception(errorMessage);
+    }
+
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return body['avatarBase64'] as String;
   }
 }
