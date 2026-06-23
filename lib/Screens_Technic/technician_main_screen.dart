@@ -6,6 +6,7 @@ import '../Screens/chat_screen.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
 import 'tech_color.dart';
+import 'tech_my_jobs_screen.dart';
 
 class TechnicianMainScreen extends StatefulWidget {
   const TechnicianMainScreen({super.key});
@@ -31,7 +32,7 @@ class _TechnicianMainScreenState extends State<TechnicianMainScreen> {
       const JobBoardScreen(), 
       TechMessagesScreen(key: _messagesKey), 
       const SizedBox(), 
-      const PlaceholderScreen(title: "Đơn của tôi"), 
+      const TechMyJobsScreen(),
       const TechProfileScreen(), 
     ];
   }

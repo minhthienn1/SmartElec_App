@@ -59,4 +59,25 @@ class TechnicianService {
       rethrow;
     }
   }
+
+  // ─────────────────────────────────────────────────────────────────
+  // API 3: Lấy danh sách đơn đã hoàn thành (DỮ LIỆU THẬT TỪ DATABASE)
+  // ─────────────────────────────────────────────────────────────────
+  Future<List<dynamic>> getCompletedJobs() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/technicians/jobs/completed'), 
+        headers: await _getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Lỗi khi tải danh sách đơn hoàn thành');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
