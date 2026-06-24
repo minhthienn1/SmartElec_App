@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'tech_color.dart';
 import 'tech_my_jobs_screen.dart'; 
 import 'tech_reviews_screen.dart'; 
 import '../services/technician_service.dart';
 import '../services/secure_storage_service.dart';
+import '../providers/user_provider.dart';
+import '../providers/chat_provider.dart';
+import '../providers/job_provider.dart';
+import '../providers/notification_badge_provider.dart';
+import '../providers/device_provider.dart';
 import '../Screens/login_screen.dart';
 
 class TechProfileScreen extends StatefulWidget {
@@ -186,9 +192,23 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               onPressed: () async {
                 Navigator.pop(context); 
-                final secureStorage = SecureStorageService();
-                await secureStorage.deleteAccessToken();
                 
+                if (mounted) {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (ctx) => const Center(child: CircularProgressIndicator(color: TechColors.primary)),
+                  );
+                }
+
+                if (mounted) {
+                  await Provider.of<UserProvider>(context, listen: false).logout();
+                  Provider.of<ChatProvider>(context, listen: false).clear();
+                  Provider.of<JobProvider>(context, listen: false).clear();
+                  Provider.of<NotificationBadgeProvider>(context, listen: false).clear();
+                  Provider.of<DeviceProvider>(context, listen: false).clear();
+                }
+
                 if (mounted) {
                   Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -381,6 +401,7 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
                 ),
               ),
               const SizedBox(height: 30),
+              const SizedBox(height: 100), // Padding chống bị che bởi Bottom Nav
             ],
           ),
         ),

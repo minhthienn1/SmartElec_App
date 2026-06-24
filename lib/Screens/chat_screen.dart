@@ -169,7 +169,7 @@ class _ChatScreenState extends State<ChatScreen> {
       FocusScope.of(context).unfocus();
       await _speechToText.listen(
         onResult: (result) {
-          if (mounted) {
+          if (mounted && !_isLoading) { // Chặn update nếu đang gửi tin nhắn
             setState(() => _textController.text = result.recognizedWords);
           }
         },
@@ -256,9 +256,15 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _textController.text.trim();
     final imageToSend = _selectedImageBytes;
     if ((text.isEmpty && imageToSend == null) || _isLoading) return;
+
+    // Đánh dấu đang gửi để khóa onResult của SpeechToText
+    setState(() {
+      _isLoading = true;
+    });
+
     if (_isListening) {
-      await _speechToText.stop();
       _isListening = false;
+      await _speechToText.stop();
     }
 
     final history = _getHistoryForAi();
@@ -266,7 +272,6 @@ class _ChatScreenState extends State<ChatScreen> {
       _messages.add(
         ChatMessage(text: text, isUser: true, imageBytes: imageToSend),
       );
-      _isLoading = true;
       _selectedImageBytes = null;
     });
     _textController.clear();
@@ -473,13 +478,19 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: AppColors.kTextPrimary,
                   ),
                 ),
-                if (ctx.symptom != null) ...[
+                if (ctx.symptom != null && ctx.symptom != 'null' && ctx.symptom!.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
                     ctx.symptom!,
                     style: const TextStyle(color: AppColors.kTextSecondary, fontSize: 12),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                  ),
+                ] else ...[
+                  const SizedBox(height: 2),
+                  const Text(
+                    "Đang thu thập thông tin...",
+                    style: TextStyle(color: AppColors.kMutedGrey, fontSize: 12, fontStyle: FontStyle.italic),
                   ),
                 ],
               ],

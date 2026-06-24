@@ -148,9 +148,19 @@ class JobProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // 5. Hàm dọn dẹp khi đăng xuất
+  void clear() {
+    debugPrint('🛑 [JobProvider] Clearing data & disconnecting socket...');
+    _socket?.disconnect();
+    _socket = null;
+    broadcastJobs.clear();
+    isLoading = false;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
-    _socket?.disconnect();
+    clear();
     super.dispose();
   }
 }

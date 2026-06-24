@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'job_board_screen.dart';
 import 'tech_messages_screen.dart';
 import 'profile_screen.dart';
@@ -17,6 +18,7 @@ class TechnicianMainScreen extends StatefulWidget {
 
 class _TechnicianMainScreenState extends State<TechnicianMainScreen> {
   int _currentIndex = 0;
+  bool _isBottomNavVisible = true;
   final GlobalKey<TechMessagesScreenState> _messagesKey = GlobalKey<TechMessagesScreenState>();
 
   late final List<Widget> _screens;
@@ -50,31 +52,55 @@ class _TechnicianMainScreenState extends State<TechnicianMainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true, 
-      body: IndexedStack(index: _currentIndex, children: _screens),
+      body: NotificationListener<UserScrollNotification>(
+        onNotification: (notification) {
+          if (notification.direction == ScrollDirection.reverse) {
+            if (_isBottomNavVisible) {
+              setState(() => _isBottomNavVisible = false);
+            }
+          } else if (notification.direction == ScrollDirection.forward) {
+            if (!_isBottomNavVisible) {
+              setState(() => _isBottomNavVisible = true);
+            }
+          }
+          return true;
+        },
+        child: IndexedStack(index: _currentIndex, children: _screens),
+      ),
 
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openAIAssistant,
-        backgroundColor: TechColors.primary,
-        elevation: 4,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.auto_awesome, color: Colors.white, size: 30),
+      floatingActionButton: AnimatedScale(
+        scale: _isBottomNavVisible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.fastOutSlowIn,
+        child: FloatingActionButton(
+          onPressed: _openAIAssistant,
+          backgroundColor: TechColors.primary,
+          elevation: 4,
+          shape: const CircleBorder(),
+          child: const Icon(Icons.auto_awesome, color: Colors.white, size: 30),
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.white,
-        shape: const CircularNotchedRectangle(), // Tạo khe hở cho nút AI
-        notchMargin: 8.0,
-        elevation: 20,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(icon: Icons.radar, label: "Tìm đơn", index: 0),
-            _buildNavItem(icon: Icons.chat_bubble_outline, label: "Tin nhắn", index: 1),
-            const SizedBox(width: 48), // Chừa chỗ cho nút nổi AI
-            _buildNavItem(icon: Icons.assignment_turned_in_outlined, label: "Đơn của tôi", index: 3),
-            _buildNavItem(icon: Icons.person_outline, label: "Cá nhân", index: 4),
-          ],
+      bottomNavigationBar: AnimatedSlide(
+        offset: _isBottomNavVisible ? Offset.zero : const Offset(0, 1.0),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.fastOutSlowIn,
+        child: BottomAppBar(
+          color: Colors.white,
+          shape: const CircularNotchedRectangle(),
+          notchMargin: 8.0,
+          elevation: 20,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(icon: Icons.radar, label: "Tìm đơn", index: 0),
+              _buildNavItem(icon: Icons.chat_bubble_outline, label: "Tin nhắn", index: 1),
+              const SizedBox(width: 48), // Chừa chỗ cho nút nổi AI
+              _buildNavItem(icon: Icons.assignment_turned_in_outlined, label: "Đơn của tôi", index: 3),
+              _buildNavItem(icon: Icons.person_outline, label: "Cá nhân", index: 4),
+            ],
+          ),
         ),
       ),
     );

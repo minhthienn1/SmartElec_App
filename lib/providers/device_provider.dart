@@ -58,4 +58,10 @@ class DeviceProvider extends ChangeNotifier {
       rethrow;
     }
   }
+
+  void clear() {
+    _devices.clear();
+    _isLoading = false;
+    notifyListeners();
+  }
 }

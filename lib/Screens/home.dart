@@ -9,11 +9,13 @@ import 'repair_detail_screen.dart';
 import 'repair_history_screen.dart';
 import '../providers/device_provider.dart';
 import '../providers/user_provider.dart';
+import '../providers/notification_badge_provider.dart';
 import '../Widgets/quick_booking_dialog.dart';
 import '../Widgets/booking_bottom_sheet.dart';
 import 'ai_history_screen.dart';
 import 'dart:async';
 import 'ai_chat_summary_screen.dart';
+import 'booked_orders_screen.dart';
 
 
 // --- ĐỊNH NGHĨA BẢNG MÀU CHUẨN ---
@@ -325,23 +327,62 @@ class HeaderSectionSliver extends StatelessWidget {
             ),
           ),
 
-          // --- NÚT THÔNG BÁO (TỐI ƯU TRÊN NỀN TRẮNG) ---
-          InkWell(
-            onTap: () {},
-            borderRadius: BorderRadius.circular(50),
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50, // Nền nút xám nhạt tinh tế
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.kIdleBorder.withOpacity(0.6)),
-              ),
-              child: const Icon(
-                Icons.notifications_none, 
-                size: 24, 
-                color: AppColors.kTextPrimary, // Icon màu đen nổi bật
-              ),
-            ),
+          // --- NÚT THÔNG BÁO VỚI BADGE ĐỜM Đỏ (CONSUMER) ---
+          Consumer<NotificationBadgeProvider>(
+            builder: (context, badge, _) {
+              return InkWell(
+                onTap: () {
+                  // Xóa badge khi khách bấm vào
+                  badge.clear();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const BookedOrdersScreen()),
+                  );
+                },
+                borderRadius: BorderRadius.circular(50),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.kIdleBorder.withOpacity(0.6)),
+                      ),
+                      child: const Icon(
+                        Icons.notifications_none,
+                        size: 24,
+                        color: AppColors.kTextPrimary,
+                      ),
+                    ),
+                    // Chấm đỏ badge (chỉ hiện khi có thông báo mới chưa đọc)
+                    if (badge.hasUnread)
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Container(
+                          width: 16,
+                          height: 16,
+                          decoration: const BoxDecoration(
+                            color: AppColors.kErrorRed,
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            badge.count > 9 ? '9+' : '${badge.count}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),
