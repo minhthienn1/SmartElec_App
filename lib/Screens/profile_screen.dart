@@ -5,6 +5,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_elec/providers/user_provider.dart';
+import 'package:smart_elec/providers/chat_provider.dart';
+import 'package:smart_elec/providers/job_provider.dart';
+import 'package:smart_elec/providers/notification_badge_provider.dart';
+import 'package:smart_elec/providers/device_provider.dart';
 import 'package:smart_elec/services/api_service.dart'; 
 import 'package:smart_elec/models/user_model.dart'; 
 import 'repair_history_screen.dart';
@@ -421,6 +425,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // 🔐 LOGOUT HOÀN CHỈNH: Gọi UserProvider.logout() để dọn dẹp toàn hệ thống
       if (context.mounted) {
         await Provider.of<UserProvider>(context, listen: false).logout();
+        Provider.of<ChatProvider>(context, listen: false).clear();
+        Provider.of<JobProvider>(context, listen: false).clear();
+        Provider.of<NotificationBadgeProvider>(context, listen: false).clear();
+        Provider.of<DeviceProvider>(context, listen: false).clear();
       }
 
       // Đóng loading dialog

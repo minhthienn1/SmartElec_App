@@ -1,7 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_elec/services/api_service.dart'; 
 import 'package:smart_elec/services/chat_socket_service.dart'; 
+import 'package:smart_elec/Screens/messenger_chat_screen.dart';
+import '../models/chat_message.dart' as chat_model;
+import '../providers/notification_badge_provider.dart';
 
 class AppColors {
   static const Color kPrimaryOrange = Color(0xFFFF7A00);
@@ -32,12 +36,15 @@ class _BookedOrdersScreenState extends State<BookedOrdersScreen> {
   void initState() {
     super.initState();
     _fetchOrders();
-
-    // Lắng nghe sự kiện từ Socket (Khi thợ nhận đơn hoặc trạng thái thay đổi)
     _setupSocketListeners();
 
-    // Timer chỉ còn nhiệm vụ duy nhất là làm tươi giao diện mỗi 60s để dòng text "Đã đặt X phút trước" nhảy số.
-    // Việc hủy đơn do Timeout giờ đã được Backend (Cronjob) lo và bắn Socket về.
+    // Khi màn hình này mở lên, tự động xóa badge để có user đang đọc rồi
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Provider.of<NotificationBadgeProvider>(context, listen: false).clear();
+      }
+    });
+
     _timer = Timer.periodic(const Duration(seconds: 60), (timer) {
       if (mounted) setState(() {});
     });
@@ -384,10 +391,20 @@ class _BookedOrdersScreenState extends State<BookedOrdersScreen> {
               style: TextStyle(color: AppColors.kPrimaryOrange, fontWeight: FontWeight.bold),
             ),
             onPressed: () {
-              // Bắt sự kiện bấm chat bằng ID thật
-              debugPrint("Mở chat cho đơn ID thật: ${order["realId"]}");
-              // TODO: Điều hướng sang màn hình chat 
-              // Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(sessionId: order["realId"])));
+              final int realId = order["realId"] as int;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (ctx) => MessengerChatScreen(
+                    sessionId: realId,
+                    receiver: chat_model.User(
+                      id: 0,
+                      fullName: 'Thợ sửa chữa',
+                      role: 'TECHNICIAN',
+                    ),
+                  ),
+                ),
+              );
             },
           ),
         ],

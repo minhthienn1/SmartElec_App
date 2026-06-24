@@ -95,10 +95,20 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  @override
-  void dispose() {
+  // 5. Hàm dọn dẹp khi đăng xuất
+  void clear() {
+    debugPrint('🛑 [ChatProvider] Clearing data & disconnecting socket...');
     _socket?.emit('leave_room');
     _socket?.disconnect();
+    _socket = null;
+    messages.clear();
+    isLoading = false;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    clear();
     super.dispose();
   }
 }

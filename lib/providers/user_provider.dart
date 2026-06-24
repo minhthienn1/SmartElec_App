@@ -46,6 +46,15 @@ class UserProvider extends ChangeNotifier {
         debugPrint('⚠️ [UserProvider] Lỗi ngắt socket: $e');
       }
 
+      // 1.5️⃣ XÓA FCM TOKEN TRÊN SERVER: Để không nhận thông báo cũ nữa
+      debugPrint('1.5️⃣ [UserProvider] Xóa FCM Token trên server...');
+      try {
+        await ApiService.updateFcmToken('');
+        debugPrint('✅ [UserProvider] Đã xóa FCM Token trên server');
+      } catch (e) {
+        debugPrint('⚠️ [UserProvider] Lỗi xóa FCM Token: $e');
+      }
+
       // 2️⃣ XÓA STORAGE: Xóa sạch JWT Token và thông tin đăng nhập trong SecureStorage
       debugPrint('2️⃣ [UserProvider] Xóa dữ liệu SecureStorage...');
       try {

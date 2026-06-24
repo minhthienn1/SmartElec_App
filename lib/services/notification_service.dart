@@ -3,9 +3,10 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
 import '../main.dart';
 import 'api_service.dart';
-import '../models/chat_message.dart' as chat_msg;
+import '../providers/notification_badge_provider.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -87,29 +88,38 @@ class NotificationService {
     // 1. Khi App đang mở (Foreground)
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       debugPrint('📩 Foreground Message: ${message.data}');
-      
-      if (message.notification != null) {
-        String type = message.data['type'] ?? 'default';
-        
-        if (type == 'NEW_JOB') {
-          showJobAlertNotification(
-            message.notification!.title ?? "Có đơn mới!",
-            message.notification!.body ?? "Bạn có một yêu cầu sửa chữa gần đây.",
-            message.data['jobId']?.toString() ?? '',
-          );
-        } else {
-          showNewMessageNotification(
-            message.notification!.title ?? "Thông báo",
-            message.notification!.body ?? "",
-            payload: _convertDataToString(message.data),
-          );
-        }
+      if (message.notification == null) return;
+
+      final String type = message.data['type'] ?? 'default';
+      final String title = message.notification!.title ?? 'Thông báo';
+      final String body = message.notification!.body ?? '';
+      final String payload = _convertDataToString(message.data);
+
+      if (type == 'NEW_JOB') {
+        // Thông báo đơn mới cho Thợ — dùng kênh alert có tiếng chuông khẩn
+        showJobAlertNotification(
+          title, body,
+          message.data['jobId']?.toString() ?? '',
+        );
+      } else if (type == 'JOB_ACCEPTED' ||
+                 type == 'JOB_STATUS_UPDATED' ||
+                 type == 'JOB_CANCELLED' ||
+                 type == 'QUOTE_UPDATED') {
+        // Thông báo đơn hàng cho Khách — dùng kênh job_alerts, payload để deep-link
+        showJobStatusNotification(title, body, payload: payload);
+        // Tăng badge có thông báo mới chưa đọc trên icon chuông
+        _incrementBadge();
+      } else {
+        // Tin nhắn chat thông thường
+        showNewMessageNotification(title, body, payload: payload);
       }
     });
 
     // 2. Khi người dùng bấm vào thông báo từ Background (App vẫn đang sống)
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('🖱️ Notification Opened App: ${message.data}');
+      // Badge sẽ tự clear khi vào được màn hình chứa thông tin rồi
+      _incrementBadge();
       _handleDeepLink(message.data);
     });
 
@@ -145,20 +155,42 @@ class NotificationService {
   }
 
   static void _handleDeepLink(Map<String, dynamic> data) {
-    String? type = data['type'];
+    final String? type = data['type'];
+    final String? sessionId = data['sessionId']?.toString();
+
+    debugPrint('🔗 DeepLink → type=$type, sessionId=$sessionId');
+
     if (type == 'NEW_JOB' && data['jobId'] != null) {
+      // Thợ bấm vào thông báo đơn mới → nhảy vào màn hình chi tiết đơn
       navigatorKey.currentState?.pushNamed('/job_detail', arguments: data['jobId'].toString());
-    } else if (type == 'JOB_ACCEPTED' && data['sessionId'] != null) {
-      navigatorKey.currentState?.pushNamed('/chat_detail', arguments: {
-        'sessionId': int.parse(data['sessionId'].toString()),
-        'receiver': chat_msg.User(
-          id: int.tryParse(data['receiverId']?.toString() ?? '') ?? 0,
-          fullName: data['receiverName']?.toString() ?? 'Khách hàng',
-          role: 'USER',
-          avatarUrl: data['receiverAvatar']?.toString(),
-        ),
+    } else if (type == 'JOB_CANCELLED') {
+      // Đơn bị hủy → nhảy vào màn hình theo dõi đơn (không vào chat trống không)
+      navigatorKey.currentState?.pushNamed('/booked_orders');
+    } else if (sessionId != null && (
+      type == 'JOB_ACCEPTED' ||
+      type == 'JOB_STATUS_UPDATED' ||
+      type == 'QUOTE_UPDATED'
+    )) {
+      // Khách bấm vào thông báo đơn hàng → nhảy vào màn hình chat của đơn đó
+      navigatorKey.currentState?.pushNamed('/messenger_chat', arguments: {
+        'sessionId': int.parse(sessionId),
+      });
+    } else if (type == 'chat' && sessionId != null) {
+      // Tin nhắn thông thường → nhảy vào màn hình chat
+      navigatorKey.currentState?.pushNamed('/messenger_chat', arguments: {
+        'sessionId': int.parse(sessionId),
       });
     }
+  }
+
+  /// Tăng badge trên icon chuông thông báo (dùng navigatorKey context)
+  static void _incrementBadge() {
+    try {
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        Provider.of<NotificationBadgeProvider>(context, listen: false).increment();
+      }
+    } catch (_) {}
   }
 
   // Hàm để các màn hình chính gọi sau khi đã khởi động xong
@@ -206,6 +238,28 @@ class NotificationService {
 
     await _notificationsPlugin.show(
       id: DateTime.now().millisecond,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(android: androidDetails),
+      payload: payload,
+    );
+  }
+
+  /// Thông báo dạng cập nhật trạng thái đơn hàng (không phải chat, không phải job alert)
+  /// Dùng kênh job_alerts để ưu tiên cao nhưng không dùng tiếng chuông khẩn cấp
+  static Future<void> showJobStatusNotification(String title, String body, {String? payload}) async {
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'job_alerts',
+      'Cảnh báo đơn hàng',
+      channelDescription: 'Kênh thông báo cho các đơn sửa chữa mới',
+      importance: Importance.high,
+      priority: Priority.high,
+      // Không dùng emergency_alarm để không làm hoảng khách
+      playSound: true,
+    );
+
+    await _notificationsPlugin.show(
+      id: DateTime.now().millisecondsSinceEpoch % 100000,
       title: title,
       body: body,
       notificationDetails: const NotificationDetails(android: androidDetails),
