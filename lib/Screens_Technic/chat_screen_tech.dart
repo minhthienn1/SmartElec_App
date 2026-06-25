@@ -737,82 +737,113 @@ class _TechChatScreenState extends State<TechChatScreen> {
   }
 
   Widget _buildQuoteCard(Map<String, dynamic> metadata, bool isMe) {
-    final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: '₫');
-    final status = metadata['quoteStatus'];
-    return Container(
-      width: 250,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xff1A244D),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.blueAccent.withOpacity(0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: const [
-              Icon(Icons.receipt_long, color: Colors.blueAccent),
-              SizedBox(width: 8),
+  final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: '₫');
+  final status = metadata['quoteStatus'];
+
+  Color statusColor;
+  String statusText;
+  IconData statusIcon;
+
+  switch (status) {
+    case 'ACCEPTED':
+      statusColor = Colors.green;
+      statusText = "Đã chấp nhận";
+      statusIcon = Icons.check_circle_outline;
+      break;
+    case 'REJECTED':
+      statusColor = Colors.red;
+      statusText = "Bị từ chối";
+      statusIcon = Icons.cancel_outlined;
+      break;
+    default:
+      statusColor = Colors.orange;
+      statusText = "Đang chờ duyệt...";
+      statusIcon = Icons.access_time_rounded;
+  }
+
+  return Container(
+    width: 250,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white, // Nền trắng tinh tế
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: const Color(0xFF1565C0).withOpacity(0.3), width: 1.5), // Viền xanh nhạt
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        Row(
+          children: [
+            const Icon(Icons.receipt_long, color: Color(0xFF1565C0), size: 20),
+            const SizedBox(width: 8),
+            const Text(
+              'BÁO GIÁ',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1565C0),
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Divider(color: Color(0xFFE0E0E0)),
+        ),
+        
+        Text(
+          metadata['title'] ?? 'Dịch vụ',
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF263238),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          currencyFormat.format(metadata['amount'] ?? 0),
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1565C0), 
+          ),
+        ),
+        const SizedBox(height: 12),
+        
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: statusColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(statusIcon, size: 14, color: statusColor),
+              const SizedBox(width: 6),
               Text(
-                'BÁO GIÁ',
+                statusText,
                 style: TextStyle(
+                  color: statusColor,
+                  fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent,
                 ),
               ),
             ],
           ),
-          const Divider(color: Colors.white24),
-          Text(
-            metadata['title'] ?? 'Dịch vụ',
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            currencyFormat.format(metadata['amount'] ?? 0),
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.red,
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (status == 'ACCEPTED')
-            const Center(
-              child: Text(
-                "✅ Đã chấp nhận",
-                style: TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            )
-          else if (status == 'REJECTED')
-            const Center(
-              child: Text(
-                "❌ Bị từ chối",
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            )
-          else
-            const Center(
-              child: Text(
-                "⏳ Đang chờ duyệt...",
-                style: TextStyle(color: Colors.orange, fontSize: 12),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   // 1. Hàm kiểm tra trạng thái báo giá mới nhất
   String? _getLatestQuoteStatus() {
