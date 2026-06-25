@@ -428,7 +428,7 @@ class ApiService {
     // Sử dụng lại _handleResponse để bắt lỗi hết hạn Token như các hàm khác
     final response = _handleResponse(
       await http.get(
-        Uri.parse('$baseUrl/repairs/history'), // Endpoint mới vừa tạo ở NestJS
+        Uri.parse('$baseUrl/chats/user/history'), 
         headers: headers
       ),
     );
@@ -942,7 +942,7 @@ class ApiService {
   /// [RLHF] Gửi phản hồi Like/Dislike cho câu trả lời AI — chạy ngầm, không throw lỗi
   static Future<void> submitAiFeedback({
     required int logId,
-    required String feedback, // "LIKE" hoặc "DISLIKE"
+    required String feedback, 
   }) async {
     try {
       final headers = await _getHeaders();
@@ -952,11 +952,9 @@ class ApiService {
         body: jsonEncode({'feedback': feedback}),
       );
     } catch (_) {
-      // Silent fail — không làm phiền người dùng
     }
   }
 
-  /// Bật/Tắt trạng thái online và cập nhật tọa độ (Dùng cho Thợ)
   static Future<Map<String, dynamic>?> toggleOnline({
     double? lat,
     double? lng,
@@ -1025,10 +1023,7 @@ class ApiService {
     }
   }
 
-  /// Upload ảnh đại diện lên Backend (lưu thẳng vào Database dạng BLOB)
-  /// Trả về chuỗi base64 của ảnh để hiển thị ngay mà không cần gọi thêm API
   static Future<String> uploadAvatar(String filePath) async {
-    // Dùng _storage (static FlutterSecureStorage) để đọc token trong static method
     final token = await _storage.read(key: 'access_token');
 
     final request = http.MultipartRequest(
@@ -1040,9 +1035,6 @@ class ApiService {
       request.headers['Authorization'] = 'Bearer $token';
     }
 
-    // Đính kèm file ảnh với field name là 'avatar' (khớp với @FileInterceptor('avatar') ở Backend)
-    // Thiết lập cứng contentType là image/jpeg để tránh lỗi mimetype trên backend
-    // (do image_picker có thể trả về file không có đuôi mở rộng chuẩn dẫn đến lỗi "application/octet-stream")
     request.files.add(
       await http.MultipartFile.fromPath(
         'avatar',
