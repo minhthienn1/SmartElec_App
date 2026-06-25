@@ -24,8 +24,8 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
   final SecureStorageService _secureStorage = SecureStorageService();
   
   bool isLoading = true;
-  bool isEditing = false;   // Trạng thái bật/tắt chế độ sửa
-  bool isSaving = false;    // Trạng thái đợi khi bấm lưu lên server
+  bool isEditing = false;   
+  bool isSaving = false;    
   
   Map<String, dynamic>? profileData;
 
