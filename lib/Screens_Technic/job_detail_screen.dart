@@ -165,7 +165,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     final formattedDate = DateFormat('HH:mm - dd/MM/yyyy').format(session.createdAt);
 
     return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       child: Column(
         children: [
           // Banner nguy hiểm (Nếu AI phân tích có nguy hiểm)
