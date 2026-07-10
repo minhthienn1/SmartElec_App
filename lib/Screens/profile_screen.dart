@@ -9,17 +9,17 @@ import 'package:smart_elec/providers/chat_provider.dart';
 import 'package:smart_elec/providers/job_provider.dart';
 import 'package:smart_elec/providers/notification_badge_provider.dart';
 import 'package:smart_elec/providers/device_provider.dart';
-import 'package:smart_elec/services/api_service.dart'; 
-import 'package:smart_elec/models/user_model.dart'; 
+import 'package:smart_elec/services/api_service.dart';
+import 'package:smart_elec/models/user_model.dart';
 import 'repair_history_screen.dart';
 import 'booked_orders_screen.dart';
 
 // --- BẢNG MÀU ĐÃ CUNG CẤP ---
 class AppColors {
   static const Color kPrimaryOrange = Color(0xFFFF7A00);
-  static const Color kDarkOrange = Color(0xFFE65C00); 
-  static const Color kLightOrange = Color(0xFFFFF3E0); 
-  static const Color kBackground = Color(0xFFF9FAFB); 
+  static const Color kDarkOrange = Color(0xFFE65C00);
+  static const Color kLightOrange = Color(0xFFFFF3E0);
+  static const Color kBackground = Color(0xFFF9FAFB);
   static const Color kInputBackground = Colors.white;
   static const Color kTextPrimary = Color(0xFF1F2937);
   static const Color kTextSecondary = Color(0xFF6B7280);
@@ -52,7 +52,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _fetchUserData();
-  
+
     // Lắng nghe sự thay đổi focus để cập nhật màu icon (đẹp hơn)
     _nameFocusNode.addListener(() => setState(() {}));
     _emailFocusNode.addListener(() => setState(() {}));
@@ -129,7 +129,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
                 color: Colors.grey.shade300,
@@ -138,21 +139,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const Text(
               'Cập nhật ảnh đại diện',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.kTextPrimary),
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: AppColors.kTextPrimary,
+              ),
             ),
             const SizedBox(height: 20),
             _buildPickerOption(
               icon: Icons.camera_alt_rounded,
               label: 'Chụp ảnh mới',
               color: AppColors.kPrimaryOrange,
-              onTap: () { Navigator.pop(ctx); _pickAndUpload(ImageSource.camera); },
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndUpload(ImageSource.camera);
+              },
             ),
             const SizedBox(height: 12),
             _buildPickerOption(
               icon: Icons.photo_library_rounded,
               label: 'Chọn từ thư viện',
               color: AppColors.kPrimaryOrange,
-              onTap: () { Navigator.pop(ctx); _pickAndUpload(ImageSource.gallery); },
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndUpload(ImageSource.gallery);
+              },
             ),
           ],
         ),
@@ -160,7 +171,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildPickerOption({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
+  Widget _buildPickerOption({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -175,11 +191,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: color.withOpacity(0.13), shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.13),
+                shape: BoxShape.circle,
+              ),
               child: Icon(icon, color: color, size: 22),
             ),
             const SizedBox(width: 16),
-            Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: color)),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+                color: color,
+              ),
+            ),
           ],
         ),
       ),
@@ -222,7 +248,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (croppedFile == null) return;
 
       setState(() => _isUploadingAvatar = true);
-      
+
       final base64Result = await ApiService.uploadAvatar(croppedFile.path);
       if (!mounted) return;
       setState(() {
@@ -230,20 +256,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isUploadingAvatar = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Ảnh đại diện đã được cập nhật!'), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating),
+        const SnackBar(
+          content: Text('✅ Ảnh đại diện đã được cập nhật!'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isUploadingAvatar = false);
-      
+
       String errorMsg = e.toString().replaceAll("Exception: ", "");
-      if (errorMsg.toLowerCase().contains('camera_access_denied') || 
+      if (errorMsg.toLowerCase().contains('camera_access_denied') ||
           errorMsg.toLowerCase().contains('no_available_camera')) {
-        errorMsg = 'Không tìm thấy máy ảnh trên thiết bị hoặc bị từ chối quyền.';
+        errorMsg =
+            'Không tìm thấy máy ảnh trên thiết bị hoặc bị từ chối quyền.';
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ Lỗi: $errorMsg'), backgroundColor: AppColors.kErrorRed, behavior: SnackBarBehavior.floating),
+        SnackBar(
+          content: Text('❌ Lỗi: $errorMsg'),
+          backgroundColor: AppColors.kErrorRed,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
@@ -258,12 +293,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder( // Thêm StatefulBuilder để update focus
+      builder: (context) => StatefulBuilder(
+        // Thêm StatefulBuilder để update focus
         builder: (context, setModalState) {
           return Container(
             decoration: BoxDecoration(
               color: AppColors.kBackground, // Màu nền trắng mới
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(25),
+              ),
               // Viền mỏng cho tinh tế
               border: Border.all(color: AppColors.kIdleBorder.withOpacity(0.3)),
             ),
@@ -281,7 +319,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.kMutedGrey, 
+                    color: AppColors.kMutedGrey,
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
@@ -295,9 +333,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 25),
-                _buildTextField(nameController, "Họ và tên", Icons.person_outline, _nameFocusNode),
+                _buildTextField(
+                  nameController,
+                  "Họ và tên",
+                  Icons.person_outline,
+                  _nameFocusNode,
+                ),
                 const SizedBox(height: 15),
-                _buildTextField(emailController, "Email", Icons.email_outlined, _emailFocusNode),
+                _buildTextField(
+                  emailController,
+                  "Email",
+                  Icons.email_outlined,
+                  _emailFocusNode,
+                ),
                 const SizedBox(height: 15),
                 _buildTextField(
                   addressController,
@@ -365,18 +413,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
       style: const TextStyle(color: AppColors.kTextPrimary), // Màu văn bản mới
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: AppColors.kTextSecondary), // Màu label mới
+        labelStyle: const TextStyle(
+          color: AppColors.kTextSecondary,
+        ), // Màu label mới
         // Icon đổi màu dựa trên focus
-        prefixIcon: Icon(icon, color: focusNode.hasFocus ? AppColors.kPrimaryOrange : AppColors.kMutedGrey), 
+        prefixIcon: Icon(
+          icon,
+          color: focusNode.hasFocus
+              ? AppColors.kPrimaryOrange
+              : AppColors.kMutedGrey,
+        ),
         filled: true,
         fillColor: AppColors.kInputBackground, // Màu nền trường nhập liệu mới
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: AppColors.kIdleBorder.withOpacity(0.5)), // Viền nhẹ
+          borderSide: BorderSide(
+            color: AppColors.kIdleBorder.withOpacity(0.5),
+          ), // Viền nhẹ
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: AppColors.kPrimaryOrange), // Viền cam khi focus
+          borderSide: const BorderSide(
+            color: AppColors.kPrimaryOrange,
+          ), // Viền cam khi focus
         ),
       ),
     );
@@ -388,7 +447,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.kBackground, // Màu nền sáng mới
-        title: const Text("Đăng xuất", style: TextStyle(color: AppColors.kTextPrimary)), 
+        title: const Text(
+          "Đăng xuất",
+          style: TextStyle(color: AppColors.kTextPrimary),
+        ),
         content: const Text(
           "Bạn có chắc chắn muốn đăng xuất tài khoản?",
           style: TextStyle(color: AppColors.kTextSecondary), // Màu văn bản mới
@@ -396,7 +458,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Hủy", style: TextStyle(color: AppColors.kMutedGrey)), // Màu grey mới
+            child: const Text(
+              "Hủy",
+              style: TextStyle(color: AppColors.kMutedGrey),
+            ), // Màu grey mới
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -417,8 +482,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (ctx) =>
-              Center(child: CircularProgressIndicator(color: AppColors.kPrimaryOrange)), // Màu Loading cam mới
+          builder: (ctx) => Center(
+            child: CircularProgressIndicator(color: AppColors.kPrimaryOrange),
+          ), // Màu Loading cam mới
         );
       }
 
@@ -457,7 +523,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Lỗi đăng xuất. Vui lòng thử lại!'),
-            backgroundColor: AppColors.kErrorRed, 
+            backgroundColor: AppColors.kErrorRed,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -485,19 +551,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Container(
             margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
-              color: AppColors.kInputBackground, 
+              color: AppColors.kInputBackground,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.kIdleBorder.withOpacity(0.3)), // Viền nhẹ
+              border: Border.all(
+                color: AppColors.kIdleBorder.withOpacity(0.3),
+              ), // Viền nhẹ
             ),
             child: IconButton(
-              icon: const Icon(Icons.edit_square, color: AppColors.kPrimaryOrange, size: 22), // Icon cam mới
+              icon: const Icon(
+                Icons.edit_square,
+                color: AppColors.kPrimaryOrange,
+                size: 22,
+              ), // Icon cam mới
               onPressed: _showEditDialog,
             ),
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.kPrimaryOrange)) 
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.kPrimaryOrange),
+            )
           : SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Column(
@@ -515,12 +589,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _buildMenuTile(
                           Icons.chat_bubble_outline,
                           "Lịch sử chat với thợ",
-                          AppColors.kMutedGrey, 
-                          () { 
+                          AppColors.kMutedGrey,
+                          () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const RepairHistoryScreen(),
+                                builder: (context) =>
+                                    const RepairHistoryScreen(),
                               ),
                             );
                           },
@@ -529,45 +604,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 12),
 
                         _buildMenuTile(
-                          Icons.assignment_outlined, 
-                          "Đơn đã đặt",
-                          AppColors.kPrimaryOrange, 
-                          () { 
+                          Icons.assignment_outlined,
+                          "Đơn hiện tại",
+                          AppColors.kPrimaryOrange,
+                          () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const BookedOrdersScreen(),
+                                builder: (context) =>
+                                    const BookedOrdersScreen(),
                               ),
                             );
                           },
                         ),
 
-                        const SizedBox(height: 12), 
+                        const SizedBox(height: 12),
 
                         _buildMenuTile(
                           Icons.lock_reset_rounded,
                           "Đổi mật khẩu",
-                          AppColors.kPrimaryOrange, 
-                          () { 
+                          AppColors.kPrimaryOrange,
+                          () {
                             debugPrint("Bấm đổi mật khẩu");
                           },
                         ),
                         const SizedBox(height: 35),
                         _buildLogoutButton(context),
-                        const SizedBox(height: 60), 
+                        const SizedBox(height: 60),
                       ],
                     ),
                   ),
 
-                  
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.developer_mode, color: AppColors.kMutedGrey, size: 14),
+                        const Icon(
+                          Icons.developer_mode,
+                          color: AppColors.kMutedGrey,
+                          size: 14,
+                        ),
                         const SizedBox(width: 4),
-                        const Text("SmartElec v1.0", style: TextStyle(color: AppColors.kMutedGrey, fontSize: 10)),
+                        const Text(
+                          "SmartElec v1.0",
+                          style: TextStyle(
+                            color: AppColors.kMutedGrey,
+                            fontSize: 10,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -596,7 +681,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   height: 96,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.kPrimaryOrange, width: 2.5),
+                    border: Border.all(
+                      color: AppColors.kPrimaryOrange,
+                      width: 2.5,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.kPrimaryOrange.withOpacity(0.18),
@@ -618,30 +706,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           )
                         : _avatarBytes != null
-                            // Ảnh từ DB (bytes): luôn fit đúng, không méo dù ảnh dọc hay ngang
-                            ? Image.memory(
-                                _avatarBytes!,
-                                fit: BoxFit.cover,
-                                width: 96,
-                                height: 96,
-                              )
-                            : _user?.avatarUrl != null
-                                // Fallback: ảnh URL (nếu có)
-                                ? Image.network(
-                                    _user!.avatarUrl!,
-                                    fit: BoxFit.cover,
-                                    width: 96,
-                                    height: 96,
-                                  )
-                                // Placeholder mặc định
-                                : Container(
-                                    color: Colors.white,
-                                    child: const Icon(
-                                      Icons.person,
-                                      size: 45,
-                                      color: AppColors.kMutedGrey,
-                                    ),
-                                  ),
+                        // Ảnh từ DB (bytes): luôn fit đúng, không méo dù ảnh dọc hay ngang
+                        ? Image.memory(
+                            _avatarBytes!,
+                            fit: BoxFit.cover,
+                            width: 96,
+                            height: 96,
+                          )
+                        : _user?.avatarUrl != null
+                        // Fallback: ảnh URL (nếu có)
+                        ? Image.network(
+                            _user!.avatarUrl!,
+                            fit: BoxFit.cover,
+                            width: 96,
+                            height: 96,
+                          )
+                        // Placeholder mặc định
+                        : Container(
+                            color: Colors.white,
+                            child: const Icon(
+                              Icons.person,
+                              size: 45,
+                              color: AppColors.kMutedGrey,
+                            ),
+                          ),
                   ),
                 ),
 
@@ -711,7 +799,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: AppColors.kInputBackground, // Thẻ trắng trên nền xám nhạt
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.kIdleBorder.withOpacity(0.3)), // Viền nhẹ
+        border: Border.all(
+          color: AppColors.kIdleBorder.withOpacity(0.3),
+        ), // Viền nhẹ
       ),
       child: Column(
         children: [
@@ -720,13 +810,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             "Số điện thoại",
             _user?.phoneNumber ?? "Chưa cập nhật",
           ),
-          Divider(height: 30, color: AppColors.kIdleBorder.withOpacity(0.3)), // Phân cách mới
+          Divider(
+            height: 30,
+            color: AppColors.kIdleBorder.withOpacity(0.3),
+          ), // Phân cách mới
           _buildDetailRow(
             Icons.email_outlined,
             "Email",
             _user?.email ?? "Chưa cập nhật",
           ),
-          Divider(height: 30, color: AppColors.kIdleBorder.withOpacity(0.3)), // Phân cách mới
+          Divider(
+            height: 30,
+            color: AppColors.kIdleBorder.withOpacity(0.3),
+          ), // Phân cách mới
           _buildDetailRow(
             Icons.location_on_outlined,
             "Địa chỉ",
@@ -746,7 +842,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             color: AppColors.kLightOrange, // Nền icon cam nhạt mới
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: AppColors.kPrimaryOrange, size: 20), // Icon cam mới
+          child: Icon(
+            icon,
+            color: AppColors.kPrimaryOrange,
+            size: 20,
+          ), // Icon cam mới
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -755,7 +855,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Text(
                 label,
-                style: const TextStyle(color: AppColors.kTextSecondary, fontSize: 12), // Màu văn bản thứ cấp mới
+                style: const TextStyle(
+                  color: AppColors.kTextSecondary,
+                  fontSize: 12,
+                ), // Màu văn bản thứ cấp mới
               ),
               const SizedBox(height: 2),
               Text(
@@ -774,12 +877,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // --- CẬP NHẬT GIAO DIỆN CÁC DÒNG MENU ---
-  Widget _buildMenuTile(IconData icon, String title, Color iconColor, VoidCallback onTap) {
+  Widget _buildMenuTile(
+    IconData icon,
+    String title,
+    Color iconColor,
+    VoidCallback onTap,
+  ) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.kInputBackground, 
+        color: AppColors.kInputBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.kIdleBorder.withOpacity(0.3)), // Viền nhẹ
+        border: Border.all(
+          color: AppColors.kIdleBorder.withOpacity(0.3),
+        ), // Viền nhẹ
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -814,8 +924,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       width: double.infinity,
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
-          backgroundColor: AppColors.kErrorRed.withOpacity(0.05), // Nền đỏ lỗi nhạt mới
-          side: BorderSide(color: AppColors.kErrorRed.withOpacity(0.3)), // Viền đỏ nhẹ mới
+          backgroundColor: AppColors.kErrorRed.withOpacity(
+            0.05,
+          ), // Nền đỏ lỗi nhạt mới
+          side: BorderSide(
+            color: AppColors.kErrorRed.withOpacity(0.3),
+          ), // Viền đỏ nhẹ mới
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),

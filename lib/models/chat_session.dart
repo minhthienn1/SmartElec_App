@@ -89,6 +89,8 @@ class SessionUser {
   final String? avatarUrl;
   final String role;
   final String? phoneNumber;
+  final double? averageRating;
+  final int? totalReviews;
 
   SessionUser({
     required this.id,
@@ -96,6 +98,8 @@ class SessionUser {
     this.avatarUrl,
     required this.role,
     this.phoneNumber,
+    this.averageRating,
+    this.totalReviews,
   });
 
   factory SessionUser.fromJson(Map<String, dynamic> json) {
@@ -105,6 +109,8 @@ class SessionUser {
       avatarUrl: json['avatarUrl'],
       role: json['role'] ?? 'USER',
       phoneNumber: json['phoneNumber'],
+      averageRating: json['averageRating'] != null ? double.tryParse(json['averageRating'].toString()) : null,
+      totalReviews: json['totalReviews'] != null ? int.tryParse(json['totalReviews'].toString()) : null,
     );
   }
 }

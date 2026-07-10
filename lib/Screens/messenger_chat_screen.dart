@@ -1407,7 +1407,10 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
                 widget.receiver.phoneNumber ?? 'Chưa cập nhật số điện thoại'
               ),
               const SizedBox(height: 12),
-              _buildDialogInfoRow(Icons.assignment_turned_in_rounded, '45 đơn hàng (Gán cứng)'),
+              _buildDialogInfoRow(
+                Icons.assignment_turned_in_rounded, 
+                '${widget.receiver.totalReviews ?? 0} đơn hàng'
+              ),
               const SizedBox(height: 12),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -1415,12 +1418,12 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
                   const Icon(Icons.star_rounded, color: Colors.amber, size: 20),
                   const SizedBox(width: 10),
                   RichText(
-                    text: const TextSpan(
-                      style: TextStyle(color: Colors.white, fontSize: 14),
+                    text: TextSpan(
+                      style: const TextStyle(color: AppColors.kTextPrimary, fontSize: 14),
                       children: [
                         TextSpan(
-                          text: '4.8 / 5.0 (Gán cứng)',
-                          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.amber),
+                          text: '${widget.receiver.averageRating?.toStringAsFixed(1) ?? "0.0"} / 5.0',
+                          style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.amber),
                         ),
                       ],
                     ),
