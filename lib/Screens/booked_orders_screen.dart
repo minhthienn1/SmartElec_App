@@ -86,6 +86,7 @@ class _BookedOrdersScreenState extends State<BookedOrdersScreen> {
             "severity": item['isDangerous'] == true ? "high" : "medium",
             "status": uiStatus,
             "hasShownPopup": false,
+            "technician": item['technician'],
           };
         }).toList();
         
@@ -392,15 +393,21 @@ class _BookedOrdersScreenState extends State<BookedOrdersScreen> {
             ),
             onPressed: () {
               final int realId = order["realId"] as int;
+              final techData = order["technician"];
+              
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (ctx) => MessengerChatScreen(
                     sessionId: realId,
                     receiver: chat_model.User(
-                      id: 0,
-                      fullName: 'Thợ sửa chữa',
+                      id: techData != null ? techData['id'] : 0,
+                      fullName: techData != null ? techData['fullName'] : 'Thợ sửa chữa',
                       role: 'TECHNICIAN',
+                      avatarUrl: techData != null ? techData['avatarUrl'] : null,
+                      phoneNumber: techData != null ? techData['phoneNumber'] : "",
+                      averageRating: techData != null && techData['averageRating'] != null ? double.tryParse(techData['averageRating'].toString()) : null,
+                      totalReviews: techData != null && techData['totalReviews'] != null ? int.tryParse(techData['totalReviews'].toString()) : null,
                     ),
                   ),
                 ),

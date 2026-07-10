@@ -128,7 +128,7 @@ class MessagesScreenState extends State<MessagesScreen> {
         centerTitle: false,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppColors.kIdleBorder.withOpacity(0.5), height: 1), 
+          child: Container(color: AppColors.kIdleBorder.withValues(alpha: 0.5), height: 1), 
         ),
         title: const Text(
           "Tin nhắn",
@@ -171,7 +171,7 @@ class MessagesScreenState extends State<MessagesScreen> {
         child: Divider(
           height: 1,
           thickness: 1,
-          color: AppColors.kIdleBorder.withOpacity(0.6), 
+          color: AppColors.kIdleBorder.withValues(alpha: 0.6), 
         ),
       ),
       itemBuilder: (context, index) {
@@ -195,7 +195,7 @@ class MessagesScreenState extends State<MessagesScreen> {
                 width: isUnread ? 2 : 1
               ),
               boxShadow: isUnread ? [
-                BoxShadow(color: AppColors.kPrimaryOrange.withOpacity(0.2), blurRadius: 8, spreadRadius: 1)
+                BoxShadow(color: AppColors.kPrimaryOrange.withValues(alpha: 0.2), blurRadius: 8, spreadRadius: 1)
               ] : [],
             ),
             child: CircleAvatar(
@@ -267,6 +267,8 @@ class MessagesScreenState extends State<MessagesScreen> {
                     role: otherUser.role,
                     avatarUrl: otherUser.avatarUrl,
                     phoneNumber: otherUser.phoneNumber ?? "", 
+                    averageRating: otherUser.averageRating,
+                    totalReviews: otherUser.totalReviews,
                   ),
                 ),
               ),
@@ -315,7 +317,7 @@ class MessagesScreenState extends State<MessagesScreen> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.kLightOrange.withOpacity(0.5),
+              color: AppColors.kLightOrange.withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.chat_bubble_outline_rounded, size: 60, color: AppColors.kPrimaryOrange),
