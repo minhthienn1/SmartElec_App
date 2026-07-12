@@ -3,7 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'job_board_screen.dart';
 import 'tech_messages_screen.dart';
 import 'profile_screen.dart';
-import '../Screens/chat_screen.dart';
+import 'tech_ai_chat_screen.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
 import 'tech_color.dart';
@@ -177,31 +177,37 @@ class TechAIAssistantBottomSheet extends StatelessWidget {
   Widget _buildAICard(BuildContext context, String title, String desc, String query) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: TechColors.primary.withOpacity(0.2), width: 1), 
+      ),
+      elevation: 0, 
+      color: const Color(0xFFF4F9FF), 
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: TechColors.primary.withOpacity(0.1),
+            color: TechColors.primary.withOpacity(0.15),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(Icons.bolt, color: TechColors.primary),
+          child: const Icon(Icons.bolt, color: TechColors.primary), 
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(desc, style: const TextStyle(fontSize: 12)),
-        trailing: const Icon(Icons.chevron_right),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+        subtitle: Text(desc, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+        trailing: const Icon(Icons.chevron_right, color: TechColors.primary),
         onTap: () {
-          Navigator.pop(context); 
+          Navigator.pop(context);
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => ChatScreen(initialQuery: query),
+              builder: (_) => TechAiChatScreen(initialQuery: query),
             ),
           );
         },
       ),
     );
   }
+
 }
 
 class PlaceholderScreen extends StatelessWidget {

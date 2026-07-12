@@ -806,12 +806,12 @@ class ApiService {
     }
   }
 
-  /// Gửi tin nhắn cho AI Gemini (thông qua Backend)
+  /// Gửi tin nhắn cho AI Gemini (thông qua Backend) — DÀNH CHO KHÁCH HÀNG
   static Future<Map<String, dynamic>> sendChatMessage(
     String message, {
     String? imageBase64,
     List<Map<String, String>>? history,
-    int? sessionId, // THÊM THAM SỐ NÀY
+    int? sessionId,
   }) async {
     final headers = await _getHeaders();
     final response = await http.post(
@@ -821,12 +821,42 @@ class ApiService {
         'message': message,
         'image': imageBase64,
         'history': history,
-        'sessionId': sessionId, // TRUYỀN LÊN BACKEND
+        'sessionId': sessionId,
       }),
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       String serverMessage = 'Lỗi kết nối đến máy chủ AI.';
+      try {
+        final body = jsonDecode(response.body);
+        serverMessage = body['message'] ?? serverMessage;
+      } catch (_) {}
+      throw Exception(serverMessage);
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  /// Gửi tin nhắn cho AI Kỹ thuật (thông qua Backend) — DÀNH RIÊNG CHO THỢ
+  /// Endpoint: POST /ai/tech-chat | Model: SmartElec Pro (ADVANCED)
+  static Future<Map<String, dynamic>> sendTechChatMessage(
+    String message, {
+    String? imageBase64,
+    List<Map<String, String>>? history,
+  }) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/ai/tech-chat'),
+      headers: headers,
+      body: jsonEncode({
+        'message': message,
+        'image': imageBase64,
+        'history': history,
+      }),
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      String serverMessage = 'Lỗi kết nối đến trợ lý kỹ thuật AI.';
       try {
         final body = jsonDecode(response.body);
         serverMessage = body['message'] ?? serverMessage;
