@@ -66,6 +66,12 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isChatLocked = false;
   int? _currentSessionId;
 
+  // ─── State cho Rating Panel (sau booking) ─────────────────────
+  bool _showRatingPanel = false;
+  bool _ratingSubmitted = false;
+  int _ratingStars = 0;
+  final TextEditingController _ratingCommentController = TextEditingController();
+
   DiagnosisContext _diagnosisCtx = const DiagnosisContext();
   bool _isRedAlert = false;
   final ImagePicker _picker = ImagePicker();
@@ -349,16 +355,9 @@ class _ChatScreenState extends State<ChatScreen> {
               setState(() {
                 _isBooking = false;
                 _isChatLocked = true;
+                _showRatingPanel = true; // Hiện rating panel sau booking
               });
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    "Đã chốt đơn! Hệ thống đang phát sóng tìm thợ quanh khu vực của bạn.",
-                  ),
-                  backgroundColor: Colors.green,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              _scrollToBottom();
             }
           } catch (e) {
             if (mounted) {
@@ -426,6 +425,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _textController.dispose();
     _scrollController.dispose();
+    _ratingCommentController.dispose();
     super.dispose();
   }
 
@@ -553,6 +553,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     else
                       ..._messages.map((m) => _buildMessageBubble(m)),
                     if (_isLoading) _buildTypingIndicator(),
+                    // ✅ Banner thông báo đặt thợ thành công + Rating panel
+                    if (_isChatLocked) _buildBookingSuccessBanner(),
+                    if (_showRatingPanel && !_ratingSubmitted) _buildRatingPanel(),
+                    if (_ratingSubmitted) _buildRatingThankYou(),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
@@ -624,6 +629,223 @@ class _ChatScreenState extends State<ChatScreen> {
           onPressed: _resetSession,
         ),
       ],
+    );
+  }
+
+  // ─── Booking Success Banner ────────────────────────────────────
+  Widget _buildBookingSuccessBanner() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(0, 12, 0, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF10B981), Color(0xFF059669)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF10B981).withOpacity(0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Đặt thợ thành công! 🎉',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Hệ thống đang phát sóng tìm thợ gần bạn...',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.wifi_tethering_rounded, color: Colors.white70, size: 20),
+        ],
+      ),
+    );
+  }
+
+  // ─── Rating Panel (sau booking, không ép buộc) ─────────────────
+  Widget _buildRatingPanel() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(0, 8, 0, 4),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.kIdleBorder.withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.kLightOrange.withOpacity(0.8),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.star_rate_rounded, color: AppColors.kPrimaryOrange, size: 18),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'SmartElec hỗ trợ tốt không?',
+                  style: TextStyle(
+                    color: AppColors.kTextPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => setState(() => _showRatingPanel = false),
+                style: TextButton.styleFrom(minimumSize: Size.zero, padding: EdgeInsets.zero),
+                child: const Text('Bỏ qua', style: TextStyle(color: AppColors.kMutedGrey, fontSize: 12)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Sao đánh giá
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (i) {
+              final star = i + 1;
+              return GestureDetector(
+                onTap: () => setState(() => _ratingStars = star),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Icon(
+                    star <= _ratingStars ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: star <= _ratingStars ? AppColors.kPrimaryOrange : AppColors.kMutedGrey,
+                    size: 36,
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 12),
+          // TextField bình luận
+          TextField(
+            controller: _ratingCommentController,
+            maxLines: 2,
+            style: const TextStyle(color: AppColors.kTextPrimary, fontSize: 13),
+            decoration: InputDecoration(
+              hintText: 'Nhận xét về câu trả lời của AI (không bắt buộc)...',
+              hintStyle: TextStyle(color: AppColors.kMutedGrey, fontSize: 13),
+              filled: true,
+              fillColor: AppColors.kBackground,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AppColors.kIdleBorder.withOpacity(0.5)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AppColors.kIdleBorder.withOpacity(0.4)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.kPrimaryOrange),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _ratingStars == 0
+                  ? null
+                  : () async {
+                      if (_currentSessionId != null) {
+                        await ApiService.submitAiSessionRating(
+                          sessionId: _currentSessionId!,
+                          rating: _ratingStars,
+                          comment: _ratingCommentController.text,
+                        );
+                      }
+                      if (mounted) {
+                        setState(() => _ratingSubmitted = true);
+                        Future.delayed(const Duration(milliseconds: 1500), () {
+                          if (mounted) {
+                            Navigator.of(context).pop();
+                          }
+                        });
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _ratingStars == 0
+                    ? AppColors.kIdleBorder
+                    : AppColors.kPrimaryOrange,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text('Gửi đánh giá', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRatingThankYou() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(0, 8, 0, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.kIdleBorder.withOpacity(0.4)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.favorite_rounded, color: AppColors.kPrimaryOrange, size: 18),
+          const SizedBox(width: 8),
+          Text(
+            'Cảm ơn bạn đã đánh giá! ($_ratingStars ⭐)',
+            style: const TextStyle(
+              color: AppColors.kTextSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
