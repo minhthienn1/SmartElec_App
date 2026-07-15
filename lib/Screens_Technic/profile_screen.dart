@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'tech_color.dart';
 import 'tech_my_jobs_screen.dart'; 
 import 'tech_reviews_screen.dart'; 
+import 'tech_ai_history_screen.dart';
 import '../services/technician_service.dart';
 import '../services/secure_storage_service.dart';
 import '../providers/user_provider.dart';
@@ -383,6 +384,12 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
                 Icons.lock_outline, 
                 "Đổi mật khẩu", 
                 onTap: isEditing ? null : _showChangePasswordDialog
+              ),
+              const SizedBox(height: 12),
+              _buildActionCard(
+                Icons.history_rounded, 
+                "Lịch sử chẩn đoán AI", 
+                onTap: isEditing ? null : () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TechAiHistoryScreen()))
               ),
               const SizedBox(height: 32),
 

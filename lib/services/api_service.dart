@@ -16,7 +16,7 @@ import 'package:http_parser/http_parser.dart';
 
 class ApiService {
   // Đọc baseUrl từ file .env, fallback về http://192.168.1.120:3000
-  static String get baseUrl => dotenv.env['API_URL'] ?? 'http://192.168.1.186:3000';
+  static String get baseUrl => dotenv.env['API_URL'] ?? 'http://192.168.1.186:3000/api';
   static const _storage = FlutterSecureStorage();
   // Instance dùng chung trong class, không cần khởi tạo lại mỗi lần gọi
   static final _secureStorage = SecureStorageService();
@@ -1053,6 +1053,84 @@ class ApiService {
     }
   }
 
+  /// [RATING] Gửi đánh giá sao + bình luận cho phiên AI chat của KHÁCH — lưu vào DB cho RAG
+  /// Endpoint: POST /ai/sessions/{sessionId}/rating
+  static Future<void> submitAiSessionRating({
+    required int sessionId,
+    required int rating,
+    String? comment,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      await http.post(
+        Uri.parse('$baseUrl/ai/sessions/$sessionId/rating'),
+        headers: headers,
+        body: jsonEncode({
+          'rating': rating,
+          if (comment != null && comment.trim().isNotEmpty) 'comment': comment.trim(),
+        }),
+      );
+    } catch (e) {
+      debugPrint('⚠️ submitAiSessionRating lỗi (bỏ qua): $e');
+    }
+  }
+
+  /// [RATING] Gửi đánh giá sao + bình luận cho phiên AI chat của THỢ — lưu vào DB cho RAG
+  /// Endpoint: POST /ai/tech-sessions/{sessionId}/rating
+  static Future<void> submitTechAiRating({
+    required int sessionId,
+    required int rating,
+    String? comment,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      await http.post(
+        Uri.parse('$baseUrl/ai/tech-sessions/$sessionId/rating'),
+        headers: headers,
+        body: jsonEncode({
+          'rating': rating,
+          if (comment != null && comment.trim().isNotEmpty) 'comment': comment.trim(),
+        }),
+      );
+    } catch (e) {
+      debugPrint('⚠️ submitTechAiRating lỗi (bỏ qua): $e');
+    }
+  }
+
+  /// Lấy lịch sử chat AI của thợ
+  static Future<List<Map<String, dynamic>>> getTechAiHistory() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/ai/tech-history'),
+        headers: headers,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('❌ getTechAiHistory Error: $e');
+      return [];
+    }
+  }
+
+  /// Xóa lịch sử chat AI của thợ
+  static Future<bool> deleteTechAiHistory(int id) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.delete(
+        Uri.parse('$baseUrl/ai/tech-history/$id'),
+        headers: headers,
+      );
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      debugPrint('❌ deleteTechAiHistory Error: $e');
+      return false;
+    }
+  }
+
   static Future<String> uploadAvatar(String filePath) async {
     final token = await _storage.read(key: 'access_token');
 
@@ -1091,5 +1169,29 @@ class ApiService {
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     return body['avatarBase64'] as String;
+  }
+
+  /// Đánh giá phiên chat AI kỹ thuật của thợ
+  static Future<bool> rateTechAiHistory(int logId, int score, String? comment) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/ai/tech-history/$logId/rate'),
+        headers: headers,
+        body: jsonEncode({
+          'score': score,
+          if (comment != null && comment.trim().isNotEmpty) 'comment': comment.trim(),
+        }),
+      );
+      
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return true;
+      }
+      debugPrint('❌ rateTechAiHistory Error: ${response.body}');
+      return false;
+    } catch (e) {
+      debugPrint('❌ rateTechAiHistory Exception: $e');
+      return false;
+    }
   }
 }

@@ -8,22 +8,24 @@ import 'package:image_picker/image_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 import '../services/api_service.dart';
+import 'tech_ai_history_screen.dart';
 import 'tech_color.dart';
 
-
+// ─── Design Tokens (xanh dương lịch sự, không neon) ─────────────────────────
 class TechAiColors {
-  static const Color primary = TechColors.primary; 
-  static const Color navy = TechColors.navy;       
-  static const Color background = Color(0xFFFFFFFF);  
-  static const Color surface = Color(0xFFF4F9FF);       
-  static const Color inputBg = Color(0xFFEBF3FA);       
-  static const Color bubbleAi = Color(0xFFF0F7FF);       
-  static const Color bubbleUser = Color(0xFF1565C0);     
-  static const Color textPrimary = Color(0xFF1E293B);    
-  static const Color textSecondary = Color(0xFF64748B); 
-  static const Color accentGlow = Color(0xFF1976D2);     
-  static const Color chipBg = Color(0xFFE1EFFE);         
-  static const Color divider = Color(0xFFE2E8F0);        
+  static const Color primary = TechColors.primary;
+  static const Color navy = TechColors.navy;
+  static const Color background = Color(0xFFF8FAFF); // Nền trắng xanh nhạt
+  static const Color surface = Color(0xFFF0F4FC);
+  static const Color inputBg = Color(0xFFEEF3FB); // Input nhạt hơn
+  static const Color bubbleAi = Color(0xFFEFF6FF); // Bubble AI xanh nhạt
+  static const Color bubbleUser = Color(0xFF1A56D6);
+  static const Color textPrimary = Color(0xFF1E293B);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color accentBlue = Color(0xFF2563EB); // Xanh dương chuẩn
+  static const Color chipBg = Color(0xFFDBEAFE);
+  static const Color divider = Color(0xFFE2E8F0);
+  static const Color sendBtn = Color(0xFF1D4ED8);
 }
 
 class TechChatMessage {
@@ -42,30 +44,16 @@ class TechChatMessage {
   }) : timestamp = timestamp ?? DateTime.now();
 }
 
-// ─── Quick Action Chips ────────────────────────────────────────────
-class _QuickAction {
-  final String label;
-  final IconData icon;
-  final String query;
-  const _QuickAction(this.label, this.icon, this.query);
-}
+// Quick actions removed as requested
 
-const List<_QuickAction> _quickActions = [
-  _QuickAction('Tra mã lỗi', Icons.error_outline_rounded, 'Tra cứu mã lỗi và cách khắc phục'),
-  _QuickAction('Sơ đồ mạch', Icons.schema_outlined, 'Mô tả sơ đồ mạch điện và đấu dây'),
-  _QuickAction('Quy trình tháo', Icons.build_outlined, 'Hướng dẫn quy trình tháo lắp linh kiện'),
-  _QuickAction('Thông số điện', Icons.electrical_services, 'Tra cứu thông số kỹ thuật điện áp, dòng điện'),
-  _QuickAction('Nạp gas', Icons.air, 'Quy trình nạp gas và kiểm tra áp suất'),
-  _QuickAction('An toàn điện', Icons.shield_outlined, 'Quy trình làm việc an toàn với điện cao áp'),
-];
-
-// ════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════════
 // MAIN SCREEN
-// ════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════════
 class TechAiChatScreen extends StatefulWidget {
   final String? initialQuery;
+  final int? techSessionId; // session ID từ server nếu có
 
-  const TechAiChatScreen({super.key, this.initialQuery});
+  const TechAiChatScreen({super.key, this.initialQuery, this.techSessionId});
 
   @override
   State<TechAiChatScreen> createState() => _TechAiChatScreenState();
@@ -77,6 +65,14 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
   final ScrollController _scrollController = ScrollController();
   final List<TechChatMessage> _messages = [];
   bool _isLoading = false;
+  int? _currentTechSessionId;
+
+  // ─── Session end state ────────────────────────────────────────────────────
+  bool _sessionEnded = false;
+  bool _showRatingPanel = false;
+  bool _ratingSubmitted = false;
+  int _ratingStars = 0;
+  final TextEditingController _ratingCommentController = TextEditingController();
 
   final ImagePicker _picker = ImagePicker();
   Uint8List? _selectedImageBytes;
@@ -87,6 +83,12 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
 
   late AnimationController _typingController;
   late Animation<double> _typingAnimation;
+
+  // Từ khóa thợ muốn kết thúc
+  static const _endKeywords = [
+    'không', 'ko', 'thôi', 'xong', 'ổn rồi', 'cảm ơn', 'ok', 'okay',
+    'không cần', 'đủ rồi', 'tạm được', 'hiểu rồi', 'đã hiểu',
+  ];
 
   @override
   void initState() {
@@ -100,20 +102,9 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
     );
 
     _initSpeech();
+    _currentTechSessionId = widget.techSessionId;
 
-    _messages.add(TechChatMessage(
-      text:
-          'Xin chào đồng nghiệp! Mình là **SmartElec Pro** — trợ lý kỹ thuật ADVANCED.\n\n'
-          'Mình có thể giúp bạn:\n'
-          '🔍 Tra cứu & giải mã **mã lỗi** chi tiết\n'
-          '📐 Mô tả **sơ đồ mạch điện** & đấu dây\n'
-          '🔧 Hướng dẫn **tháo lắp & thay thế** linh kiện\n'
-          '⚡ Tra **thông số kỹ thuật** (điện áp, dòng, áp suất gas)\n'
-          '🛡️ **An toàn lao động** với điện cao áp\n\n'
-          'Bạn đang gặp ca kỹ thuật nào vậy?',
-      isUser: false,
-    ));
-
+    // KHÔNG thêm tin nhắn chào lên đầu — chỉ show QuickChips + trả lời ở dưới
     if (widget.initialQuery != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _textController.text = widget.initialQuery!;
@@ -139,6 +130,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
   }
 
   void _toggleListening() async {
+    if (_sessionEnded) return;
     if (_isListening) {
       await _speechToText.stop();
       if (mounted) setState(() => _isListening = false);
@@ -188,7 +180,14 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
         .toList();
   }
 
+  /// Kiểm tra xem thợ có muốn kết thúc phiên không
+  bool _isEndIntent(String text) {
+    final lower = text.toLowerCase().trim();
+    return _endKeywords.any((kw) => lower == kw || lower.startsWith('$kw ') || lower.endsWith(' $kw'));
+  }
+
   Future<void> _handleSend() async {
+    if (_sessionEnded) return;
     final text = _textController.text.trim();
     final imageToSend = _selectedImageBytes;
     if ((text.isEmpty && imageToSend == null) || _isLoading) return;
@@ -197,6 +196,9 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
       await _speechToText.stop();
       if (mounted) setState(() => _isListening = false);
     }
+
+    // Kiểm tra intent kết thúc từ thợ
+    final bool wantsToEnd = _isEndIntent(text) && _messages.isNotEmpty;
 
     final history = _getHistoryForAi();
     setState(() {
@@ -215,6 +217,24 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
       String? imageBase64;
       if (imageToSend != null) imageBase64 = base64Encode(imageToSend);
 
+      if (wantsToEnd) {
+        // AI hỏi xác nhận kết thúc
+        await Future.delayed(const Duration(milliseconds: 600));
+        if (mounted) {
+          setState(() {
+            _messages.add(TechChatMessage(
+              text: 'Bạn có muốn kết thúc phiên hỗ trợ này không? Nếu còn thắc mắc kỹ thuật thêm, cứ nhắn tôi nhé! 😊',
+              isUser: false,
+            ));
+            _isLoading = false;
+          });
+          _scrollToBottom();
+          // Lần sau nếu thợ vẫn đồng ý → trigger end
+          _checkAndTriggerSessionEnd(text);
+        }
+        return;
+      }
+
       final response = await ApiService.sendTechChatMessage(
         text,
         imageBase64: imageBase64,
@@ -222,15 +242,28 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
       );
 
       if (mounted) {
+        final aiText = response['text'] ?? 'Không có phản hồi.';
         setState(() {
           _messages.add(TechChatMessage(
-            text: response['text'] ?? 'Không có phản hồi.',
+            text: aiText,
             isUser: false,
             topic: response['techState']?['topic'],
           ));
+          // Lưu sessionId nếu backend trả về
+          if (response['sessionId'] != null) {
+            _currentTechSessionId = response['sessionId'] is int
+                ? response['sessionId']
+                : int.tryParse(response['sessionId'].toString());
+          }
           _isLoading = false;
         });
         _scrollToBottom();
+        if (response['is_finished'] == true && response['logId'] != null) {
+          // Delay nhẹ để người dùng đọc được câu trả lời cuối của AI rồi mới Pop up
+          Future.delayed(const Duration(seconds: 1), () {
+            if (mounted) _showRatingDialog(response['logId']);
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -245,18 +278,43 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
     }
   }
 
-  void _handleQuickAction(_QuickAction action) {
-    _textController.text = action.query;
-    _handleSend();
+  /// Kiểm tra xem trước đó AI đã hỏi "còn cần không" chưa, nếu thợ xác nhận → kết thúc
+  void _checkAndTriggerSessionEnd(String userReply) {
+    if (_messages.length < 2) return;
+    final prevAi = _messages.reversed.skip(1).firstWhere(
+      (m) => !m.isUser,
+      orElse: () => TechChatMessage(text: '', isUser: false),
+    );
+    if (prevAi.text.contains('kết thúc phiên hỗ trợ')) {
+      final lower = userReply.toLowerCase().trim();
+      if (_endKeywords.any((kw) => lower == kw || lower.contains(kw))) {
+        _triggerSessionEnd();
+      }
+    }
   }
+
+  void _triggerSessionEnd() {
+    setState(() {
+      _sessionEnded = true;
+      _messages.add(TechChatMessage(
+        text: '✅ **Phiên hỗ trợ kỹ thuật đã kết thúc.**\n\nCảm ơn bạn đã sử dụng SmartElec Pro! Chúc bạn sửa thành công! 🔧',
+        isUser: false,
+      ));
+      _showRatingPanel = true;
+    });
+    _scrollToBottom();
+  }
+
+// Quick action handler removed
 
   void _clearChat() {
     setState(() {
       _messages.clear();
-      _messages.add(TechChatMessage(
-        text: 'Đã xóa lịch sử. Bạn cần tra cứu kỹ thuật gì tiếp theo?',
-        isUser: false,
-      ));
+      _sessionEnded = false;
+      _showRatingPanel = false;
+      _ratingSubmitted = false;
+      _ratingStars = 0;
+      _ratingCommentController.clear();
     });
   }
 
@@ -265,7 +323,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Đã sao chép nội dung'),
-        backgroundColor: TechAiColors.primary,
+        backgroundColor: TechAiColors.accentBlue,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 1),
@@ -290,13 +348,14 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
     _typingController.dispose();
     _textController.dispose();
     _scrollController.dispose();
+    _ratingCommentController.dispose();
     _speechToText.cancel();
     super.dispose();
   }
 
-  // ═══════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
   // BUILD
-  // ═══════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -305,17 +364,18 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
       body: Column(
         children: [
           Expanded(
-            child: _messages.length <= 1
+            child: _messages.isEmpty
                 ? _buildWelcomeView()
                 : _buildMessageList(),
           ),
           if (_selectedImageBytes != null) _buildImagePreview(),
-          _buildInputArea(),
+          if (!_sessionEnded) _buildInputArea() else _buildSessionEndedBar(),
         ],
       ),
     );
   }
 
+  // ─── AppBar ──────────────────────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: Colors.transparent,
@@ -328,7 +388,8 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xD90B1B4D), Color(0xD91565C0)],
+                // Gradient xanh dương lịch sự — không neon
+                colors: [Color(0xEF0B2560), Color(0xEF1A56D6)],
               ),
             ),
           ),
@@ -346,13 +407,12 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: const LinearGradient(
-                colors: [Color(0xFF4FC3F7), Color(0xFF1565C0)],
+                colors: [Color(0xFF60A5FA), Color(0xFF1D4ED8)],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: TechAiColors.accentGlow.withOpacity(0.4),
+                  color: TechAiColors.accentBlue.withOpacity(0.3),
                   blurRadius: 8,
-                  spreadRadius: 1,
                 ),
               ],
             ),
@@ -373,7 +433,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
               Text(
                 'Trợ lý Kỹ thuật ADVANCED',
                 style: TextStyle(
-                  color: Color(0xFF90CAF9),
+                  color: Color(0xFFBAD4F9),
                   fontSize: 11,
                 ),
               ),
@@ -383,102 +443,101 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.delete_outline_rounded, color: Colors.white70, size: 22),
-          onPressed: _clearChat,
-          tooltip: 'Xóa lịch sử',
+          icon: const Icon(Icons.history_rounded, color: Colors.white70, size: 22),
+          onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const TechAiHistoryScreen()));
+          },
+          tooltip: 'Lịch sử chẩn đoán',
         ),
       ],
     );
   }
 
-  // ── Welcome View ──────────────────────────────────────────────────
+  // ─── Welcome View (chỉ hiện QuickChips, KHÔNG render lại bubble chào) ─────
   Widget _buildWelcomeView() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 8),
-          _buildAiBubble(_messages.first),
-          const SizedBox(height: 20),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Tra cứu nhanh:',
-              style: TextStyle(
-                color: TechAiColors.textSecondary,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+          // Header thay cho bubble chào dài
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: TechAiColors.bubbleAi,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: TechAiColors.accentBlue.withOpacity(0.2)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF60A5FA), Color(0xFF1D4ED8)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.auto_awesome, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'SmartElec Pro sẵn sàng!',
+                        style: TextStyle(
+                          color: TechAiColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      SizedBox(height: 3),
+                      Text(
+                        'Bạn đang gặp ca kỹ thuật nào? Nhập câu hỏi bên dưới.',
+                        style: TextStyle(
+                          color: TechAiColors.textSecondary,
+                          fontSize: 12.5,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 10),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 2.8,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemCount: _quickActions.length,
-            itemBuilder: (_, i) => _buildQuickChip(_quickActions[i]),
-          ),
-          const SizedBox(height: 120),
         ],
       ),
     );
   }
 
-  Widget _buildQuickChip(_QuickAction action) {
-    return GestureDetector(
-      onTap: () => _handleQuickAction(action),
-      child: Container(
-        decoration: BoxDecoration(
-          color: TechAiColors.chipBg,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: TechAiColors.primary.withOpacity(0.35),
-            width: 1,
-          ),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          children: [
-            Icon(action.icon, color: TechAiColors.accentGlow, size: 18),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                action.label,
-                style: TextStyle(
-                  color: TechAiColors.textPrimary,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Message List ──────────────────────────────────────────────────
+  // ─── Message List ─────────────────────────────────────────────────────────
   Widget _buildMessageList() {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: _messages.length + (_isLoading ? 1 : 0),
+      itemCount: _messages.length +
+          (_isLoading ? 1 : 0) +
+          (_sessionEnded && _showRatingPanel ? 1 : 0),
       itemBuilder: (_, index) {
-        if (index == _messages.length) return _buildTypingIndicator();
+        // Typing indicator
+        if (index == _messages.length && _isLoading) {
+          return _buildTypingIndicator();
+        }
+        // Rating panel sau kết thúc phiên
+        if (_sessionEnded && index == _messages.length + (_isLoading ? 1 : 0)) {
+          return _ratingSubmitted ? _buildRatingThankYou() : _buildRatingPanel();
+        }
+        if (index >= _messages.length) return const SizedBox.shrink();
         final msg = _messages[index];
         return msg.isUser ? _buildUserBubble(msg) : _buildAiBubble(msg);
       },
     );
   }
 
-  // ── AI Bubble ─────────────────────────────────────────────────────
+  // ─── AI Bubble ────────────────────────────────────────────────────────────
   Widget _buildAiBubble(TechChatMessage msg) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -491,7 +550,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
-                colors: [Color(0xFF4FC3F7), Color(0xFF1565C0)],
+                colors: [Color(0xFF60A5FA), Color(0xFF1D4ED8)],
               ),
             ),
             child: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
@@ -510,7 +569,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
                     bottomRight: Radius.circular(18),
                   ),
                   border: Border.all(
-                    color: TechAiColors.primary.withOpacity(0.25),
+                    color: TechAiColors.accentBlue.withOpacity(0.15),
                     width: 1,
                   ),
                 ),
@@ -522,47 +581,45 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
                     MarkdownBody(
                       data: msg.text,
                       styleSheet: MarkdownStyleSheet(
-                        p: TextStyle(
-                          color: TechAiColors.textPrimary, // Sẽ tự nhận màu đen xám mới
+                        p: const TextStyle(
+                          color: TechAiColors.textPrimary,
                           fontSize: 14,
                           height: 1.55,
                         ),
-                        strong: TextStyle(
-                          color: TechAiColors.primary, // Đổi sang xanh dương đậm
+                        strong: const TextStyle(
+                          color: TechAiColors.accentBlue,
                           fontWeight: FontWeight.bold,
                         ),
                         code: const TextStyle(
-                          backgroundColor: Color(0xFFE2E8F0), // Nền xám nhạt cho code
-                          color: Color(0xFFC62828), // Chữ code màu đỏ tối hoặc xanh đậm
+                          backgroundColor: Color(0xFFE2E8F0),
+                          color: Color(0xFFC62828),
                           fontFamily: 'monospace',
                           fontSize: 13,
                         ),
                         codeblockDecoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9), // Background code block màu xám sáng
+                          color: const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: TechAiColors.divider,
-                          ),
+                          border: Border.all(color: TechAiColors.divider),
                         ),
-                        listBullet: TextStyle(
-                          color: TechAiColors.primary, // Đổi dấu chấm đầu dòng thành xanh dương
+                        listBullet: const TextStyle(
+                          color: TechAiColors.accentBlue,
                           fontSize: 14,
                         ),
-                        h3: TextStyle(
-                          color: TechAiColors.primary, // Tiêu đề thẻ h3 màu xanh dương đậm
+                        h3: const TextStyle(
+                          color: TechAiColors.accentBlue,
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
                         ),
                         blockquoteDecoration: BoxDecoration(
-                          border: Border(
+                          border: const Border(
                             left: BorderSide(
-                              color: TechAiColors.primary, // Đường viền blockquote
+                              color: TechAiColors.accentBlue,
                               width: 3,
                             ),
                           ),
-                          color: TechAiColors.surface, // Nền ánh xanh
+                          color: TechAiColors.surface,
                         ),
-                        blockquote: TextStyle(
+                        blockquote: const TextStyle(
                           color: TechAiColors.textSecondary,
                           fontStyle: FontStyle.italic,
                         ),
@@ -615,9 +672,9 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: info.$2.withOpacity(0.18),
+        color: info.$2.withOpacity(0.15),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: info.$2.withOpacity(0.4)),
+        border: Border.all(color: info.$2.withOpacity(0.35)),
       ),
       child: Text(
         info.$1,
@@ -630,7 +687,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
     );
   }
 
-  // ── User Bubble ───────────────────────────────────────────────────
+  // ─── User Bubble ──────────────────────────────────────────────────────────
   Widget _buildUserBubble(TechChatMessage msg) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, left: 50),
@@ -642,7 +699,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                if (msg.imageBytes != null) ...[  
+                if (msg.imageBytes != null) ...[
                   Container(
                     height: 180,
                     width: 220,
@@ -661,7 +718,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF1E88E5), Color(0xFF1565C0)],
+                        colors: [Color(0xFF2563EB), Color(0xFF1A56D6)],
                       ),
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(18),
@@ -671,8 +728,8 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: TechAiColors.primary.withOpacity(0.3),
-                          blurRadius: 8,
+                          color: TechAiColors.accentBlue.withOpacity(0.18),
+                          blurRadius: 6,
                           offset: const Offset(0, 3),
                         ),
                       ],
@@ -700,15 +757,15 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
           const SizedBox(width: 8),
           CircleAvatar(
             radius: 16,
-            backgroundColor: TechAiColors.primary.withOpacity(0.25),
-            child: const Icon(Icons.engineering, color: Colors.white, size: 18),
+            backgroundColor: TechAiColors.accentBlue.withOpacity(0.15),
+            child: const Icon(Icons.engineering, color: TechAiColors.accentBlue, size: 18),
           ),
         ],
       ),
     );
   }
 
-  // ── Typing Indicator ──────────────────────────────────────────────
+  // ─── Typing Indicator ─────────────────────────────────────────────────────
   Widget _buildTypingIndicator() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -720,7 +777,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
-                colors: [Color(0xFF4FC3F7), Color(0xFF1565C0)],
+                colors: [Color(0xFF60A5FA), Color(0xFF1D4ED8)],
               ),
             ),
             child: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
@@ -736,7 +793,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
                 bottomRight: Radius.circular(18),
               ),
               border: Border.all(
-                color: TechAiColors.primary.withOpacity(0.25),
+                color: TechAiColors.accentBlue.withOpacity(0.15),
               ),
             ),
             child: AnimatedBuilder(
@@ -753,7 +810,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
                         width: 7,
                         height: 7,
                         decoration: const BoxDecoration(
-                          color: Color(0xFF4FC3F7),
+                          color: TechAiColors.accentBlue,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -768,7 +825,209 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
     );
   }
 
-  // ── Image Preview ─────────────────────────────────────────────────
+  // ─── Session Ended Bar ────────────────────────────────────────────────────
+  Widget _buildSessionEndedBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: TechAiColors.divider)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.check_circle_outline_rounded,
+                color: TechAiColors.accentBlue, size: 18),
+            const SizedBox(width: 8),
+            const Text(
+              'Phiên đã kết thúc',
+              style: TextStyle(
+                color: TechAiColors.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 12),
+            TextButton(
+              onPressed: _clearChat,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                backgroundColor: TechAiColors.chipBg,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              ),
+              child: const Text(
+                'Phiên mới',
+                style: TextStyle(color: TechAiColors.accentBlue, fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Rating Panel (không ép buộc) ─────────────────────────────────────────
+  Widget _buildRatingPanel() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(0, 8, 0, 16),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: TechAiColors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: TechAiColors.chipBg,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.star_rate_rounded, color: TechAiColors.accentBlue, size: 18),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'SmartElec Pro hữu ích không?',
+                  style: TextStyle(
+                    color: TechAiColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => setState(() => _showRatingPanel = false),
+                style: TextButton.styleFrom(minimumSize: Size.zero, padding: EdgeInsets.zero),
+                child: const Text('Bỏ qua', style: TextStyle(color: TechAiColors.textSecondary, fontSize: 12)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Sao đánh giá
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (i) {
+              final star = i + 1;
+              return GestureDetector(
+                onTap: () => setState(() => _ratingStars = star),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Icon(
+                    star <= _ratingStars ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: star <= _ratingStars ? TechAiColors.accentBlue : TechAiColors.textSecondary,
+                    size: 36,
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 12),
+          // TextField bình luận
+          TextField(
+            controller: _ratingCommentController,
+            maxLines: 2,
+            style: const TextStyle(color: TechAiColors.textPrimary, fontSize: 13),
+            decoration: InputDecoration(
+              hintText: 'Nhận xét về câu trả lời kỹ thuật (không bắt buộc)...',
+              hintStyle: TextStyle(color: TechAiColors.textSecondary.withOpacity(0.7), fontSize: 13),
+              filled: true,
+              fillColor: TechAiColors.surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: TechAiColors.divider),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: TechAiColors.divider),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: TechAiColors.accentBlue),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _ratingStars == 0
+                  ? null
+                  : () async {
+                      if (_currentTechSessionId != null) {
+                        await ApiService.submitTechAiRating(
+                          sessionId: _currentTechSessionId!,
+                          rating: _ratingStars,
+                          comment: _ratingCommentController.text,
+                        );
+                      }
+                      if (mounted) setState(() => _ratingSubmitted = true);
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _ratingStars == 0
+                    ? TechAiColors.divider
+                    : TechAiColors.accentBlue,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text('Gửi đánh giá', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRatingThankYou() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(0, 8, 0, 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: TechAiColors.divider),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.favorite_rounded, color: TechAiColors.accentBlue, size: 18),
+          const SizedBox(width: 8),
+          Text(
+            'Cảm ơn bạn đã đánh giá! ($_ratingStars ⭐)',
+            style: const TextStyle(
+              color: TechAiColors.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Image Preview ────────────────────────────────────────────────────────
   Widget _buildImagePreview() {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -776,7 +1035,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
       decoration: BoxDecoration(
         color: TechAiColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: TechAiColors.primary.withOpacity(0.3)),
+        border: Border.all(color: TechAiColors.accentBlue.withOpacity(0.25)),
       ),
       child: Row(
         children: [
@@ -805,19 +1064,20 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
     );
   }
 
-  // ── Input Area ────────────────────────────────────────────────────
+  // ─── Input Area (màu xanh lịch sự, không neon) ────────────────────────────
   Widget _buildInputArea() {
     return Container(
       decoration: BoxDecoration(
-        color: TechAiColors.surface,
+        color: Colors.white,
         border: Border(
           top: BorderSide(color: TechAiColors.divider, width: 1),
         ),
         boxShadow: [
+          // Shadow nhẹ nhàng, không glow neon
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
@@ -850,8 +1110,8 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: _isListening
-                      ? TechAiColors.accentGlow
-                      : TechAiColors.primary.withOpacity(0.3),
+                      ? TechAiColors.accentBlue
+                      : TechAiColors.divider,
                   width: _isListening ? 1.5 : 1,
                 ),
               ),
@@ -864,7 +1124,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
                       maxLines: null,
                       keyboardType: TextInputType.multiline,
                       textInputAction: TextInputAction.newline,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: TechAiColors.textPrimary,
                         fontSize: 14.5,
                       ),
@@ -882,7 +1142,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
                   _buildInputIconBtn(
                     icon: _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
                     onTap: _toggleListening,
-                    color: _isListening ? TechAiColors.accentGlow : TechAiColors.textSecondary,
+                    color: _isListening ? TechAiColors.accentBlue : TechAiColors.textSecondary,
                     tooltip: 'Giọng nói',
                     padding: const EdgeInsets.only(right: 6, bottom: 2),
                   ),
@@ -891,6 +1151,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
             ),
           ),
           const SizedBox(width: 8),
+          // Nút Send — xanh dương lịch sự, không glow neon
           GestureDetector(
             onTap: _isLoading ? null : _handleSend,
             child: AnimatedContainer(
@@ -899,22 +1160,16 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
               height: 46,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: _isLoading
-                    ? const LinearGradient(
-                        colors: [Color(0xFF334E6E), Color(0xFF334E6E)],
-                      )
-                    : const LinearGradient(
-                        colors: [Color(0xFF4FC3F7), Color(0xFF1565C0)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                color: _isLoading
+                    ? TechAiColors.divider
+                    : TechAiColors.sendBtn,
                 boxShadow: _isLoading
                     ? []
                     : [
                         BoxShadow(
-                          color: TechAiColors.accentGlow.withOpacity(0.4),
-                          blurRadius: 10,
-                          spreadRadius: 1,
+                          color: TechAiColors.sendBtn.withOpacity(0.25),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
                       ],
               ),
@@ -923,7 +1178,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
                       padding: const EdgeInsets.all(12.0),
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withOpacity(0.7),
                       ),
                     )
                   : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
@@ -961,5 +1216,115 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
     return '$h:$m';
+  }
+
+  void _showRatingDialog(int logId) {
+    int selectedRating = 0;
+    final TextEditingController commentController = TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Bắt buộc tương tác với popup
+      builder: (dialogContext) { // Dùng biến tên khác để tránh nhầm lẫn context
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Column(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: Colors.green, size: 48),
+                  SizedBox(height: 12),
+                  Text("Kết thúc tra cứu", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text("Bạn đánh giá thế nào về giải pháp của AI?", textAlign: TextAlign.center, style: TextStyle(fontSize: 14)),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < selectedRating ? Icons.star_rounded : Icons.star_outline_rounded,
+                          color: Colors.amber,
+                          size: 36,
+                        ),
+                        onPressed: () {
+                          setDialogState(() => selectedRating = index + 1);
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: commentController,
+                    decoration: InputDecoration(
+                      hintText: "Nhập bình luận (không bắt buộc)...",
+                      hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
+                      filled: true,
+                      fillColor: TechAiColors.surface,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                    maxLines: 2,
+                  ),
+                ],
+              ),
+              actionsPadding: const EdgeInsets.only(bottom: 16, right: 16, left: 16),
+              actions: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.pop(dialogContext); // Đóng popup
+                          Navigator.pop(context); // Về trang trước
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Text("Bỏ qua", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: selectedRating > 0 ? TechAiColors.accentBlue : Colors.grey.shade300,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        onPressed: selectedRating > 0
+                            ? () async {
+                                // GỌI API RATING THEO logId (Hàm này bạn đã chép vào ApiService ở bước trước)
+                                await ApiService.rateTechAiHistory(logId, selectedRating, commentController.text);
+                                
+                                if (mounted) {
+                                  Navigator.pop(dialogContext);
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Cảm ơn bạn đã đánh giá!'), backgroundColor: Colors.green),
+                                  );
+                                }
+                              }
+                            : null,
+                        child: const Text("Gửi Đánh Giá", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 }

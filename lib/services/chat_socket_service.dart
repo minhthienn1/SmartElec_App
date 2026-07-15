@@ -66,8 +66,10 @@ class ChatSocketService {
     final baseUrl = dotenv.env['API_URL'] ?? 'http://127.0.0.1:3000';
     _connectionStatusController.add('Đang kết nối...');
 
+    final socketUrl = baseUrl.replaceAll(RegExp(r'/api/?$'), '');
+
     _socket = IO.io(
-      baseUrl,
+      socketUrl,
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
