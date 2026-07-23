@@ -49,7 +49,7 @@ class UserProvider extends ChangeNotifier {
       // 1.5️⃣ XÓA FCM TOKEN TRÊN SERVER: Để không nhận thông báo cũ nữa
       debugPrint('1.5️⃣ [UserProvider] Xóa FCM Token trên server...');
       try {
-        await ApiService.updateFcmToken('');
+        await ApiService.updateFcmToken('', timeoutSeconds: 5);
         debugPrint('✅ [UserProvider] Đã xóa FCM Token trên server');
       } catch (e) {
         debugPrint('⚠️ [UserProvider] Lỗi xóa FCM Token: $e');

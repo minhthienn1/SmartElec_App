@@ -260,6 +260,10 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
   }
 
   Future<void> _loadChatHistory() async {
+    if (mounted) {
+      setState(() => _isLoadingHistory = true);
+    }
+
     try {
       final rawData = await ApiService.getChatMessages(widget.sessionId);
       if (mounted) {
@@ -268,7 +272,9 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
           final parsed = rawData.map((e) => ChatMessage.fromJson(e)).toList();
           // API thường trả về tin cũ nhất ở đầu.
           // Vì ListView reverse: true nên ta phải đảo ngược mảng để tin mới nhất nằm ở index 0
-          _messages.addAll(parsed.reversed);
+          _messages
+            ..clear()
+            ..addAll(parsed.reversed);
           _isLoadingHistory = false;
         });
       }
