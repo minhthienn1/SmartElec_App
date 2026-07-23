@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "930935404216",
+    "project_id": "smartelec-8a1d3",
+    "storage_bucket": "smartelec-8a1d3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:930935404216:android:c3f7dae1c2bd55a0b5664d",
+        "android_client_info": {
+          "package_name": "com.example.smart_elec"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "930935404216-2ktgil3il70lsnm4j10bv8l4vjl9vufe.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.smart_elec",
+            "certificate_hash": "967c7d2ba91bf46beca780dbdcbcc7dc804a4b26"
+          }
+        },
+        {
+          "client_id": "930935404216-gjhn2p0ap1i7b48emj8gc48sitlld14p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.smart_elec",
+            "certificate_hash": "b0179a1a56824b996642971cd9975fe01339351f"
+          }
+        },
+        {
+          "client_id": "930935404216-sqjqjdoun1old5k4a58sqduuflp1sa0m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.smart_elec",
+            "certificate_hash": "4c80b8946fd01abed28774842914f78961e47cdf"
+          }
+        },
+        {
+          "client_id": "930935404216-cmi1b92m338plcit14c879lm0vul62ba.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkeb6W3uu6pR3jA-otaVaXep5BIWAAHig"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "930935404216-cmi1b92m338plcit14c879lm0vul62ba.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
