@@ -726,6 +726,7 @@ class ApiService {
   static Future<void> updateFcmToken(
     String fcmToken, {
     String? jwtToken,
+    int timeoutSeconds = 10,
   }) async {
     try {
       Map<String, String> headers;
@@ -738,11 +739,13 @@ class ApiService {
         headers = await _getHeaders();
       }
 
-      final response = await http.patch(
-        Uri.parse('$baseUrl/users/fcm-token'),
-        headers: headers,
-        body: jsonEncode({'token': fcmToken}),
-      );
+      final response = await http
+          .patch(
+            Uri.parse('$baseUrl/users/fcm-token'),
+            headers: headers,
+            body: jsonEncode({'token': fcmToken}),
+          )
+          .timeout(Duration(seconds: timeoutSeconds));
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         debugPrint('❌ Không thể cập nhật FCM Token: ${response.statusCode}');

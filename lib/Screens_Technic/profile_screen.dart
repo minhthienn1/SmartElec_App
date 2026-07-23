@@ -5,13 +5,12 @@ import 'tech_my_jobs_screen.dart';
 import 'tech_reviews_screen.dart'; 
 import 'tech_ai_history_screen.dart';
 import '../services/technician_service.dart';
-import '../services/secure_storage_service.dart';
 import '../providers/user_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/job_provider.dart';
 import '../providers/notification_badge_provider.dart';
 import '../providers/device_provider.dart';
-import '../Screens/login_screen.dart';
+// login screen import not required here
 
 class TechProfileScreen extends StatefulWidget {
   const TechProfileScreen({super.key});
@@ -22,7 +21,6 @@ class TechProfileScreen extends StatefulWidget {
 
 class _TechProfileScreenState extends State<TechProfileScreen> {
   final TechnicianService _service = TechnicianService();
-  final SecureStorageService _secureStorage = SecureStorageService();
   
   bool isLoading = true;
   bool isEditing = false;   
@@ -176,53 +174,63 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
     );
   }
 
-  void _handleLogout() {
-    showDialog(
+  Future<void> _handleLogout() async {
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text("Xác nhận đăng xuất", style: TextStyle(color: TechColors.primary, fontWeight: FontWeight.bold)),
-          content: const Text("Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này không?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Hủy", style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () async {
-                Navigator.pop(context); 
-                
-                if (mounted) {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (ctx) => const Center(child: CircularProgressIndicator(color: TechColors.primary)),
-                  );
-                }
-
-                if (mounted) {
-                  await Provider.of<UserProvider>(context, listen: false).logout();
-                  Provider.of<ChatProvider>(context, listen: false).clear();
-                  Provider.of<JobProvider>(context, listen: false).clear();
-                  Provider.of<NotificationBadgeProvider>(context, listen: false).clear();
-                  Provider.of<DeviceProvider>(context, listen: false).clear();
-                }
-
-                if (mounted) {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    (Route<dynamic> route) => false,
-                  );
-                }
-              },
-              child: const Text("Đăng xuất", style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Xác nhận đăng xuất", style: TextStyle(color: TechColors.primary, fontWeight: FontWeight.bold)),
+        content: const Text("Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này không?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Hủy", style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Đăng xuất", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
+
+    if (confirmed != true) return;
+
+    try {
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => const Center(child: CircularProgressIndicator(color: TechColors.primary)),
+        );
+      }
+
+      if (mounted) {
+        await Provider.of<UserProvider>(context, listen: false).logout();
+        Provider.of<ChatProvider>(context, listen: false).clear();
+        Provider.of<JobProvider>(context, listen: false).clear();
+        Provider.of<NotificationBadgeProvider>(context, listen: false).clear();
+        Provider.of<DeviceProvider>(context, listen: false).clear();
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Lỗi đăng xuất: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override

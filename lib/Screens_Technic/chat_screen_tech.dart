@@ -171,12 +171,18 @@ class _TechChatScreenState extends State<TechChatScreen> {
   }
 
   Future<void> _loadChatHistory() async {
+    if (mounted) {
+      setState(() => _isLoadingHistory = true);
+    }
+
     try {
       final rawData = await ApiService.getChatMessages(widget.sessionId);
       if (mounted) {
         setState(() {
           final parsed = rawData.map((e) => ChatMessage.fromJson(e)).toList();
-          _messages.addAll(parsed.reversed);
+          _messages
+            ..clear()
+            ..addAll(parsed.reversed);
           _isLoadingHistory = false;
         });
       }
@@ -490,10 +496,10 @@ class _TechChatScreenState extends State<TechChatScreen> {
     );
   }
 
-  void _showCompleteJobDialog() {
-    showDialog(
+  Future<void> _showCompleteJobDialog() async {
+    final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xff1A244D),
         title: const Text('Xác nhận hoàn thành', style: TextStyle(color: Colors.white)),
         content: const Text(
@@ -502,23 +508,18 @@ class _TechChatScreenState extends State<TechChatScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context), // Đóng dialog
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
             onPressed: () async {
-              Navigator.pop(context); // 1. Đóng hộp thoại xác nhận ngay lập tức
-              
               if (_isProcessing) return;
               setState(() => _isProcessing = true);
-              
+
               try {
-                // 2. Gọi API hoàn thành công việc
                 await ApiService.completeJob(widget.sessionId);
-                
                 if (mounted) {
-                  // 3. Thông báo thành công nhanh
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('✅ Đã hoàn thành công việc!'),
@@ -526,11 +527,8 @@ class _TechChatScreenState extends State<TechChatScreen> {
                       duration: Duration(seconds: 2),
                     ),
                   );
-                  
-                  // 4. ĐÁ RA NGOÀI NGAY LẬP TỨC (Không dùng Future.delayed nữa)
-                  // Truyền kèm giá trị 'true' để báo hiệu cho màn hình ngoài biết là đã đổi trạng thái
-                  Navigator.pop(context, true); 
                 }
+                Navigator.pop(dialogContext, true);
               } catch (e) {
                 if (mounted) {
                   setState(() => _isProcessing = false);
@@ -545,6 +543,10 @@ class _TechChatScreenState extends State<TechChatScreen> {
         ],
       ),
     );
+
+    if (result == true && mounted) {
+      Navigator.pop(context, true);
+    }
   }
 
   void _handleCancelJob() async {
