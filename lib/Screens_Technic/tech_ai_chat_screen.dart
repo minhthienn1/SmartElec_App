@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
+import 'package:uuid/uuid.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -65,13 +66,16 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
   final ScrollController _scrollController = ScrollController();
   final List<TechChatMessage> _messages = [];
   bool _isLoading = false;
-  int? _currentTechSessionId;
+  // ignore: unused_field
+  int? _currentTechSessionId; // Giữ lại — được set từ widget.techSessionId và backend response
 
   // ─── Session end state ────────────────────────────────────────────────────
   bool _sessionEnded = false;
   bool _showRatingPanel = false;
   bool _ratingSubmitted = false;
   int _ratingStars = 0;
+  int? _lastLogId;                        // logId của tin nhắn cuối — dùng cho rating
+  bool _waitingForEndConfirm = false;     // Đã hỏi xác nhận kết thúc, chờ thợ confirm
   final TextEditingController _ratingCommentController = TextEditingController();
 
   final ImagePicker _picker = ImagePicker();
@@ -79,15 +83,21 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
 
   final SpeechToText _speechToText = SpeechToText();
   bool _isListening = false;
-  bool _speechEnabled = false;
+  // ignore: unused_field
+  bool _speechEnabled = false; // Được set trong _initSpeech, dùng cho future features
 
   late AnimationController _typingController;
   late Animation<double> _typingAnimation;
 
-  // Từ khóa thợ muốn kết thúc
+  // Session key duy nhất cho mỗi phiên chat — gửi lên backend để nhóm logs
+  late String _techSessionKey;
+
+  // Từ khóa thợ muốn kết thúc (có dấu + không dấu)
   static const _endKeywords = [
     'không', 'ko', 'thôi', 'xong', 'ổn rồi', 'cảm ơn', 'ok', 'okay',
     'không cần', 'đủ rồi', 'tạm được', 'hiểu rồi', 'đã hiểu',
+    'ket thuc', 'xong roi', 'on roi', 'cam on', 'du roi', 'tam duoc',
+    'hieu roi', 'da hieu', 'khong can',
   ];
 
   @override
@@ -103,6 +113,8 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
 
     _initSpeech();
     _currentTechSessionId = widget.techSessionId;
+    // Generate session key mới cho phiên chat này
+    _techSessionKey = const Uuid().v4();
 
     // KHÔNG thêm tin nhắn chào lên đầu — chỉ show QuickChips + trả lời ở dưới
     if (widget.initialQuery != null) {
@@ -199,6 +211,8 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
 
     // Kiểm tra intent kết thúc từ thợ
     final bool wantsToEnd = _isEndIntent(text) && _messages.isNotEmpty;
+    // Nếu thợ vừa xác nhận kết thúc (sau khi AI hỏi lần 1)
+    final bool confirmingEnd = _waitingForEndConfirm && _isEndIntent(text);
 
     final history = _getHistoryForAi();
     setState(() {
@@ -218,7 +232,16 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
       if (imageToSend != null) imageBase64 = base64Encode(imageToSend);
 
       if (wantsToEnd) {
-        // AI hỏi xác nhận kết thúc
+        // Nếu đã hỏi xác nhận trước → kết thúc ngay
+        if (confirmingEnd) {
+          setState(() {
+            _isLoading = false;
+            _waitingForEndConfirm = false;
+          });
+          _triggerSessionEnd();
+          return;
+        }
+        // Lần đầu → AI hỏi xác nhận
         await Future.delayed(const Duration(milliseconds: 600));
         if (mounted) {
           setState(() {
@@ -227,10 +250,9 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
               isUser: false,
             ));
             _isLoading = false;
+            _waitingForEndConfirm = true; // Đánh dấu đang chờ confirm
           });
           _scrollToBottom();
-          // Lần sau nếu thợ vẫn đồng ý → trigger end
-          _checkAndTriggerSessionEnd(text);
         }
         return;
       }
@@ -239,6 +261,7 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
         text,
         imageBase64: imageBase64,
         history: history,
+        techSessionKey: _techSessionKey,
       );
 
       if (mounted) {
@@ -249,6 +272,12 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
             isUser: false,
             topic: response['techState']?['topic'],
           ));
+          // Lưu logId mới nhất từ backend để dùng cho rating
+          if (response['logId'] != null) {
+            _lastLogId = response['logId'] is int
+                ? response['logId']
+                : int.tryParse(response['logId'].toString());
+          }
           // Lưu sessionId nếu backend trả về
           if (response['sessionId'] != null) {
             _currentTechSessionId = response['sessionId'] is int
@@ -256,13 +285,18 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
                 : int.tryParse(response['sessionId'].toString());
           }
           _isLoading = false;
+          _waitingForEndConfirm = false; // Reset nếu AI trả lời bình thường
         });
         _scrollToBottom();
-        if (response['is_finished'] == true && response['logId'] != null) {
-          // Delay nhẹ để người dùng đọc được câu trả lời cuối của AI rồi mới Pop up
-          Future.delayed(const Duration(seconds: 1), () {
-            if (mounted) _showRatingDialog(response['logId']);
-          });
+      }
+    } on TechAiLimitException catch (e) {
+      // 429 đặc biệt — hiển UI riêng theo loại
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (e.isPerMinute) {
+          _showLimitPerMinuteBanner();
+        } else if (e.isPerDay) {
+          _showLimitPerDaySheet();
         }
       }
     } catch (e) {
@@ -278,19 +312,150 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
     }
   }
 
-  /// Kiểm tra xem trước đó AI đã hỏi "còn cần không" chưa, nếu thợ xác nhận → kết thúc
-  void _checkAndTriggerSessionEnd(String userReply) {
-    if (_messages.length < 2) return;
-    final prevAi = _messages.reversed.skip(1).firstWhere(
-      (m) => !m.isUser,
-      orElse: () => TechChatMessage(text: '', isUser: false),
+
+  /// Hiển snackbar khi chat quá nhanh (LIMIT_PER_MINUTE)
+  void _showLimitPerMinuteBanner() {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.timer_outlined, color: Colors.white, size: 20),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Đợi 1 phút để chat lại nhé, bạn đang chat quá nhanh! ⏳',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF0F172A),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 5),
+      ),
     );
-    if (prevAi.text.contains('kết thúc phiên hỗ trợ')) {
-      final lower = userReply.toLowerCase().trim();
-      if (_endKeywords.any((kw) => lower == kw || lower.contains(kw))) {
-        _triggerSessionEnd();
-      }
-    }
+  }
+
+  /// Hiển bottom sheet khi hết quota ngày (LIMIT_PER_DAY)
+  void _showLimitPerDaySheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Icon
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(Icons.bolt_rounded, size: 40, color: Color(0xFFF59E0B)),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Lượt chat miễn phí đã hết hôm nay',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Bạn muốn chat thêm? Hãy đăng ký gói Premium để chat không giới hạn, hoặc quay lại vào ngày mai nhé 😊',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF64748B),
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 28),
+            // Nút Premium (đang phát triển)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Row(
+                        children: [
+                          Icon(Icons.construction_rounded, color: Colors.white, size: 18),
+                          SizedBox(width: 8),
+                          Text('Tính năng này đang được phát triển 🔨'),
+                        ],
+                      ),
+                      backgroundColor: const Color(0xFF2563EB),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      margin: const EdgeInsets.all(16),
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.workspace_premium_rounded, size: 20),
+                label: const Text(
+                  'Đăng ký Premium',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Nút quay lại
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF64748B),
+                  side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text(
+                  'Quay lại vào ngày mai',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _triggerSessionEnd() {
@@ -314,7 +479,11 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
       _showRatingPanel = false;
       _ratingSubmitted = false;
       _ratingStars = 0;
+      _lastLogId = null;
+      _waitingForEndConfirm = false;
       _ratingCommentController.clear();
+      // Generate session key mới cho phiên tiếp theo
+      _techSessionKey = const Uuid().v4();
     });
   }
 
@@ -974,11 +1143,14 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
               onPressed: _ratingStars == 0
                   ? null
                   : () async {
-                      if (_currentTechSessionId != null) {
-                        await ApiService.submitTechAiRating(
-                          sessionId: _currentTechSessionId!,
-                          rating: _ratingStars,
-                          comment: _ratingCommentController.text,
+                      // Bug #4 fix: dùng logId từ tin nhắn cuối để rate đúng endpoint
+                      if (_lastLogId != null) {
+                        await ApiService.rateTechAiHistory(
+                          _lastLogId!,
+                          _ratingStars,
+                          _ratingCommentController.text.trim().isEmpty
+                              ? null
+                              : _ratingCommentController.text.trim(),
                         );
                       }
                       if (mounted) setState(() => _ratingSubmitted = true);
@@ -1218,113 +1390,5 @@ class _TechAiChatScreenState extends State<TechAiChatScreen>
     return '$h:$m';
   }
 
-  void _showRatingDialog(int logId) {
-    int selectedRating = 0;
-    final TextEditingController commentController = TextEditingController();
-
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Bắt buộc tương tác với popup
-      builder: (dialogContext) { // Dùng biến tên khác để tránh nhầm lẫn context
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: Colors.white,
-              surfaceTintColor: Colors.transparent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Column(
-                children: [
-                  Icon(Icons.check_circle_rounded, color: Colors.green, size: 48),
-                  SizedBox(height: 12),
-                  Text("Kết thúc tra cứu", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                ],
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text("Bạn đánh giá thế nào về giải pháp của AI?", textAlign: TextAlign.center, style: TextStyle(fontSize: 14)),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (index) {
-                      return IconButton(
-                        icon: Icon(
-                          index < selectedRating ? Icons.star_rounded : Icons.star_outline_rounded,
-                          color: Colors.amber,
-                          size: 36,
-                        ),
-                        onPressed: () {
-                          setDialogState(() => selectedRating = index + 1);
-                        },
-                      );
-                    }),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: commentController,
-                    decoration: InputDecoration(
-                      hintText: "Nhập bình luận (không bắt buộc)...",
-                      hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
-                      filled: true,
-                      fillColor: TechAiColors.surface,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    ),
-                    maxLines: 2,
-                  ),
-                ],
-              ),
-              actionsPadding: const EdgeInsets.only(bottom: 16, right: 16, left: 16),
-              actions: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.pop(dialogContext); // Đóng popup
-                          Navigator.pop(context); // Về trang trước
-                        },
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        child: const Text("Bỏ qua", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      flex: 2,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: selectedRating > 0 ? TechAiColors.accentBlue : Colors.grey.shade300,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        onPressed: selectedRating > 0
-                            ? () async {
-                                // GỌI API RATING THEO logId (Hàm này bạn đã chép vào ApiService ở bước trước)
-                                await ApiService.rateTechAiHistory(logId, selectedRating, commentController.text);
-                                
-                                if (mounted) {
-                                  Navigator.pop(dialogContext);
-                                  Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Cảm ơn bạn đã đánh giá!'), backgroundColor: Colors.green),
-                                  );
-                                }
-                              }
-                            : null,
-                        child: const Text("Gửi Đánh Giá", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
 }
+

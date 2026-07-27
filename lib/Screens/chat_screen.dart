@@ -339,6 +339,15 @@ class _ChatScreenState extends State<ChatScreen> {
           _isLoading = false;
         });
       }
+    } on TechAiLimitException catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (e.isPerMinute) {
+          _showLimitPerMinuteBanner();
+        } else if (e.isPerDay) {
+          _showLimitPerDaySheet();
+        }
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -349,6 +358,146 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     _scrollToBottom();
   }
+
+  void _showLimitPerMinuteBanner() {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.timer_outlined, color: Colors.white, size: 20),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Đợi 1 phút để chat lại nhé, bạn đang chat quá nhanh! ⏳',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF1F2937),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
+  void _showLimitPerDaySheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.kLightOrange,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(Icons.bolt_rounded, size: 40, color: AppColors.kPrimaryOrange),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Lượt chat miễn phí đã hết hôm nay',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.kTextPrimary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Bạn muốn chat thêm? Hãy đăng ký gói Premium để chat không giới hạn, hoặc quay lại vào ngày mai nhé 😊',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.kTextSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Row(
+                        children: [
+                          Icon(Icons.construction_rounded, color: Colors.white, size: 18),
+                          SizedBox(width: 8),
+                          Text('Tính năng này đang được phát triển 🔨'),
+                        ],
+                      ),
+                      backgroundColor: AppColors.kPrimaryOrange,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      margin: const EdgeInsets.all(16),
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.workspace_premium_rounded, size: 20),
+                label: const Text(
+                  'Đăng ký Premium',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.kPrimaryOrange,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.kTextSecondary,
+                  side: const BorderSide(color: AppColors.kIdleBorder),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text(
+                  'Quay lại vào ngày mai',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   Future<void> _handleBooking(int? sessionId) async {
     if (sessionId == null || _isBooking) return;

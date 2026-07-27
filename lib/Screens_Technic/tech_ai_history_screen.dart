@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'tech_color.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../services/api_service.dart';
 
 class TechAiColors {
@@ -39,43 +39,68 @@ class _TechAiHistoryScreenState extends State<TechAiHistoryScreen> {
         for (var item in data) {
           final dtUtc = DateTime.tryParse(item['createdAt'] ?? '');
           if (dtUtc == null) continue;
-          final dt = dtUtc.toLocal(); // Convert to local time!
-          
-          final dateStr = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
-          final timeStr = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-          
+          final dt = dtUtc.toLocal();
+
+          final dateStr =
+              '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+          final timeStr =
+              '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+
           if (dateStr != currentDateStr) {
             uiItems.add({'isHeader': true, 'date': dateStr});
             currentDateStr = dateStr;
           }
 
+          // Title: câu hỏi đầu phiên
           String userMsg = item['userMsg']?.toString().trim() ?? '';
           if (userMsg.isEmpty) userMsg = 'Trò chuyện kỹ thuật';
-          String title = userMsg.length > 50 ? userMsg.substring(0, 50) + '...' : userMsg;
+          String title =
+              userMsg.length > 50 ? '${userMsg.substring(0, 50)}...' : userMsg;
 
-          String aiResponse = item['aiResponse']?.toString().trim() ?? 'Không có dữ liệu';
-          String summary = aiResponse.length > 150 ? aiResponse.substring(0, 150) + '...' : aiResponse;
-          
+          // Summary: trích plain text từ AI response — strip markdown mạnh
+          String aiResponse =
+              item['aiResponse']?.toString().trim() ?? 'Không có dữ liệu';
+          // Strip markdown để hiển thị thuần text trong card
+          String summary = aiResponse
+              .replaceAll(RegExp(r'\*{1,3}([^*]*)\*{1,3}'), r'$1') // **bold** / *italic*
+              .replaceAll(RegExp(r'#{1,6}\s*'), '')                  // ### heading
+              .replaceAll(RegExp(r'^\s*[-*+]\s+', multiLine: true), '• ')  // bullet
+              .replaceAll(RegExp(r'^\s*\d+\.\s+', multiLine: true), '')    // numbered list
+              .replaceAll(RegExp(r'`{1,3}[^`]*`{1,3}'), '')           // `code`
+              .replaceAll(RegExp(r'\[([^\]]+)\]\([^)]+\)'), r'$1')    // [link](url)
+              .replaceAll(RegExp(r'\(Nguồn:.*?\)'), '')               // (Nguồn:...)
+              .replaceAll(RegExp(r'\n{2,}'), ' ')                      // blank lines
+              .replaceAll('\n', ' ')                                    // single newlines
+              .replaceAll(RegExp(r'\s{2,}'), ' ')                      // extra spaces
+              .trim();
+          if (summary.length > 110) summary = '${summary.substring(0, 110)}...';
+
           String device = item['deviceCategory']?.toString() ?? 'Khác';
           if (device == 'null') device = 'Khác';
 
-          int? score = item['score'];
+          // score: null = chưa rate, > 0 = đã rate
+          final dynamic rawScore = item['score'];
+          int? score =
+              (rawScore != null && rawScore is int && rawScore > 0) ? rawScore : null;
           String? comment = item['humanUsefulnessNote'];
+          int messageCount = item['messageCount'] ?? 1;
 
           uiItems.add({
             'isHeader': false,
             'id': item['id'],
+            'techSessionKey': item['techSessionKey'],
             'date': dateStr,
             'time': timeStr,
             'title': title,
             'device': device,
             'summary': summary,
             'detail': aiResponse,
-            'score': score,       
+            'score': score,
             'comment': comment,
+            'messageCount': messageCount,
           });
         }
-        
+
         _historyList = uiItems;
         _isLoading = false;
       });
@@ -205,83 +230,105 @@ class _TechAiHistoryScreenState extends State<TechAiHistoryScreen> {
                 ],
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        item['time'],
-                        style: const TextStyle(
-                          color: TechAiColors.accentBlue,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          item['time'],
+                          style: const TextStyle(
+                            color: TechAiColors.accentBlue,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: TechAiColors.textSecondary),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    item['title'],
-                    style: const TextStyle(
-                      color: TechAiColors.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                        Row(
+                          children: [
+                            if ((item['messageCount'] ?? 1) > 1)
+                              Container(
+                                margin: const EdgeInsets.only(right: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: TechAiColors.accentBlue.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${item['messageCount']} tin nhắn',
+                                  style: const TextStyle(
+                                    color: TechAiColors.accentBlue,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: TechAiColors.textSecondary),
+                          ],
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.build_circle_outlined, size: 14, color: TechAiColors.textSecondary),
-                      const SizedBox(width: 4),
-                      Text(
-                        item['device'],
+                    const SizedBox(height: 8),
+                    Text(
+                      item['title'],
+                      style: const TextStyle(
+                        color: TechAiColors.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.build_circle_outlined, size: 14, color: TechAiColors.textSecondary),
+                        const SizedBox(width: 4),
+                        Text(
+                          item['device'],
+                          style: const TextStyle(
+                            color: TechAiColors.textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: TechAiColors.surface,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        item['summary'],
                         style: const TextStyle(
                           color: TechAiColors.textSecondary,
                           fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                          height: 1.4,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // Bug #4 fix: chỉ hiện sao khi score != null (đã rate thực sự)
+                    if (item['score'] != null) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Row(
+                            children: List.generate(5, (starIndex) {
+                              return Icon(
+                                starIndex < (item['score'] as int) ? Icons.star_rounded : Icons.star_border_rounded,
+                                color: Colors.amber,
+                                size: 16,
+                              );
+                            }),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Đã đánh giá', style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
+                        ],
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: TechAiColors.surface,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      item['summary'],
-                      style: const TextStyle(
-                        color: TechAiColors.textSecondary,
-                        fontSize: 13,
-                        height: 1.4,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (item['score'] != null) ...[
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Row(
-                          children: List.generate(5, (starIndex) {
-                            return Icon(
-                              starIndex < item['score'] ? Icons.star : Icons.star_border,
-                              color: Colors.amber,
-                              size: 16,
-                            );
-                          }),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('Đã đánh giá', style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
                   ],
-                ],
               ),
             ),
           ));
@@ -386,14 +433,39 @@ class TechAiHistoryDetailScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Text(
-                item['detail'] ?? item['summary'],
-                style: const TextStyle(
-                  color: TechAiColors.textPrimary,
-                  fontSize: 14.5,
-                  height: 1.6,
+              child: MarkdownBody(
+                data: item['detail'] ?? item['summary'],
+                styleSheet: MarkdownStyleSheet(
+                  p: const TextStyle(
+                    color: TechAiColors.textPrimary,
+                    fontSize: 14.5,
+                    height: 1.65,
+                  ),
+                  h1: const TextStyle(color: TechAiColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold),
+                  h2: const TextStyle(color: TechAiColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+                  h3: const TextStyle(color: TechAiColors.accentBlue, fontSize: 15, fontWeight: FontWeight.bold),
+                  strong: const TextStyle(color: TechAiColors.textPrimary, fontWeight: FontWeight.w700),
+                  em: const TextStyle(color: TechAiColors.textSecondary, fontStyle: FontStyle.italic),
+                  listBullet: const TextStyle(color: TechAiColors.accentBlue, fontSize: 14),
+                  code: TextStyle(
+                    backgroundColor: TechAiColors.surface,
+                    color: const Color(0xFFD63384),
+                    fontSize: 13,
+                    fontFamily: 'monospace',
+                  ),
+                  codeblockDecoration: BoxDecoration(
+                    color: TechAiColors.surface,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  blockquoteDecoration: BoxDecoration(
+                    color: TechAiColors.surface,
+                    borderRadius: BorderRadius.circular(6),
+                    border: const Border(
+                      left: BorderSide(color: TechAiColors.accentBlue, width: 3),
+                    ),
+                  ),
+                  blockquotePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
-                
               ),
             ),
             if (item['score'] != null) ...[
