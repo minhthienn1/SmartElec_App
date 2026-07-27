@@ -8,6 +8,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter/services.dart';
 import '../Widgets/custom_loading_button.dart';
 import '../Widgets/booking_bottom_sheet.dart';
+import '../Screens/ai_chat_summary_screen.dart';
 
 // ─── Design Tokens (Đồng bộ với Home) ─────────────────────────────
 class AppColors {
@@ -32,6 +33,10 @@ class ChatMessage {
   final int? sessionId;
   final int? logId;
   String? feedback;
+  // 💡 Gợi ý mềm "case cũ có liên quan" — do backend tính theo device/brand
+  // đã chuẩn hoá, KHÔNG dựa vào so khớp nội dung tin nhắn. Có thể null.
+  final Map<String, dynamic>? relatedHistory;
+  bool relatedHistoryDismissed;
 
   ChatMessage({
     required this.text,
@@ -42,6 +47,8 @@ class ChatMessage {
     this.sessionId,
     this.logId,
     this.feedback,
+    this.relatedHistory,
+    this.relatedHistoryDismissed = false,
   }) : timestamp = timestamp ?? DateTime.now();
 }
 
@@ -65,6 +72,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _bannerDismissed = false;
   bool _isChatLocked = false;
   int? _currentSessionId;
+  bool _hasShownRelatedHistory = false;
 
   // ─── State cho Rating Panel (sau booking) ─────────────────────
   bool _showRatingPanel = false;
@@ -308,6 +316,12 @@ class _ChatScreenState extends State<ChatScreen> {
                 : int.tryParse(response['sessionId'].toString());
           }
 
+          Map<String, dynamic>? newRelatedHistory;
+          if (!_hasShownRelatedHistory && response['relatedHistory'] is Map) {
+            newRelatedHistory = Map<String, dynamic>.from(response['relatedHistory']);
+            _hasShownRelatedHistory = true;
+          }
+
           _messages.add(
             ChatMessage(
               text: response['text'],
@@ -319,6 +333,7 @@ class _ChatScreenState extends State<ChatScreen> {
               },
               sessionId: _currentSessionId, // <-- Gán session ID mới cập nhật vào đây
               logId: response['logId'] is int ? response['logId'] : null,
+              relatedHistory: newRelatedHistory,
             ),
           );
           _isLoading = false;
@@ -411,6 +426,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _bannerDismissed = false;
       _isChatLocked = false;
       _isBooking = false;
+      _hasShownRelatedHistory = false;
       _messages.add(
         ChatMessage(
           text:
@@ -551,7 +567,13 @@ class _ChatScreenState extends State<ChatScreen> {
                         child: _buildEmptyState(),
                       )
                     else
-                      ..._messages.map((m) => _buildMessageBubble(m)),
+                      ..._messages.expand((m) => [
+                            _buildMessageBubble(m),
+                            if (!m.isUser &&
+                                m.relatedHistory != null &&
+                                !m.relatedHistoryDismissed)
+                              _buildRelatedHistoryCard(m),
+                          ]),
                     if (_isLoading) _buildTypingIndicator(),
                     // ✅ Banner thông báo đặt thợ thành công + Rating panel
                     if (_isChatLocked) _buildBookingSuccessBanner(),
@@ -1101,6 +1123,75 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  /// 💡 Banner gợi ý mềm: "Có vẻ bạn từng báo thiết bị này gặp vấn đề tương tự".
+  /// Chỉ mang tính thông tin thêm — không chặn, không thay đổi luồng chat AI.
+  /// Người dùng có thể bấm xem hoặc lờ đi/đóng lại, AI vẫn tiếp tục hỏi/chẩn
+  /// đoán bình thường như không có gì xảy ra.
+  Widget _buildRelatedHistoryCard(ChatMessage msg) {
+    final related = msg.relatedHistory!;
+    final deviceType = related['deviceType']?.toString() ?? 'thiết bị này';
+    final brand = related['brand']?.toString();
+    final title = brand != null && brand.trim().isNotEmpty
+        ? '$brand $deviceType'
+        : deviceType;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16, left: 42),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => _openRelatedHistory(related),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.kLightOrange.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.kPrimaryOrange.withOpacity(0.25)),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.lightbulb_outline_rounded,
+                color: AppColors.kPrimaryOrange,
+                size: 18,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Có vẻ bạn từng báo $title gặp vấn đề tương tự trước đây — xem lại?',
+                  style: const TextStyle(
+                    color: AppColors.kTextPrimary,
+                    fontSize: 12.5,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.kMutedGrey),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () => setState(() => msg.relatedHistoryDismissed = true),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openRelatedHistory(Map<String, dynamic> related) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AiChatSummaryScreen(
+          deviceName: related['deviceType']?.toString() ?? 'Thiết bị',
+          symptom: related['symptom']?.toString() ?? '',
+          aiSummary: related['aiSummary']?.toString() ??
+              'Chưa có tóm tắt cho phiên chẩn đoán này.',
+        ),
       ),
     );
   }
