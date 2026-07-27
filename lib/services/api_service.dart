@@ -846,6 +846,7 @@ class ApiService {
     String message, {
     String? imageBase64,
     List<Map<String, String>>? history,
+    String? techSessionKey,
   }) async {
     final headers = await _getHeaders();
     final response = await http.post(
@@ -855,6 +856,7 @@ class ApiService {
         'message': message,
         'image': imageBase64,
         'history': history,
+        if (techSessionKey != null) 'techSessionKey': techSessionKey,
       }),
     );
 
