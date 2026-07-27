@@ -830,10 +830,16 @@ class ApiService {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       String serverMessage = 'Lỗi kết nối đến máy chủ AI.';
+      String? errorCode;
       try {
         final body = jsonDecode(response.body);
         serverMessage = body['message'] ?? serverMessage;
+        errorCode = body['code'];
       } catch (_) {}
+
+      if (response.statusCode == 429 && errorCode != null) {
+        throw TechAiLimitException(code: errorCode, message: serverMessage);
+      }
       throw Exception(serverMessage);
     }
 
@@ -862,10 +868,17 @@ class ApiService {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       String serverMessage = 'Lỗi kết nối đến trợ lý kỹ thuật AI.';
+      String? errorCode;
       try {
         final body = jsonDecode(response.body);
         serverMessage = body['message'] ?? serverMessage;
+        errorCode = body['code'];
       } catch (_) {}
+
+      // 429 có code → throw exception đặc biệt để UI xử lý riêng
+      if (response.statusCode == 429 && errorCode != null) {
+        throw TechAiLimitException(code: errorCode, message: serverMessage);
+      }
       throw Exception(serverMessage);
     }
 
@@ -1199,4 +1212,18 @@ class ApiService {
       return false;
     }
   }
+}
+
+/// Exception đặc biệt khi backend trả 429 có mã lỗi rõ ràng.
+/// [code] là 'LIMIT_PER_DAY' hoặc 'LIMIT_PER_MINUTE'
+class TechAiLimitException implements Exception {
+  final String code;
+  final String message;
+  const TechAiLimitException({required this.code, required this.message});
+
+  bool get isPerDay => code == 'LIMIT_PER_DAY';
+  bool get isPerMinute => code == 'LIMIT_PER_MINUTE';
+
+  @override
+  String toString() => 'TechAiLimitException($code): $message';
 }
