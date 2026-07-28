@@ -605,7 +605,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                         _buildMenuTile(
                           Icons.assignment_outlined,
-                          "Đơn hiện tại",
+                          "Quản lí đơn đặt thợ",
                           AppColors.kPrimaryOrange,
                           () {
                             Navigator.push(

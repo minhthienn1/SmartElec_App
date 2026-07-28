@@ -9,6 +9,7 @@ class GoogleAuthService {
       '930935404216-cmi1b92m338plcit14c879lm0vul62ba.apps.googleusercontent.com';
 
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: _serverClientId,
     serverClientId: _serverClientId,
     scopes: ['email', 'profile'],
   );
