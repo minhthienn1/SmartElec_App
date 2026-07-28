@@ -421,21 +421,18 @@ class ApiService {
 
   /// Lấy danh sách lịch sử sửa chữa (chỉ lấy các ca ĐÃ CÓ THỢ)
   /// Gọi API: GET /repairs/history
-  static Future<List<RepairCase>> getMechanicRepairHistory() async {
-    // Sử dụng lại hàm _getHeaders() chuẩn của bạn
+  static Future<Map<String, dynamic>> getPaginatedHistoryOrders({int page = 1, int limit = 10, String status = 'ALL'}) async {
     final headers = await _getHeaders(); 
     
-    // Sử dụng lại _handleResponse để bắt lỗi hết hạn Token như các hàm khác
     final response = _handleResponse(
       await http.get(
-        Uri.parse('$baseUrl/chats/user/history'), 
+        Uri.parse('$baseUrl/chats/user/history?page=$page&limit=$limit&status=$status'), 
         headers: headers
       ),
     );
 
-    // Kế thừa nguyên vẹn cách bắt lỗi backend của bạn
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      String serverMessage = 'Không thể tải lịch sử sửa chữa với thợ.';
+      String serverMessage = 'Không thể tải lịch sử sửa chữa.';
       try {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         serverMessage = body['message'] as String? ?? serverMessage;
@@ -443,18 +440,20 @@ class ApiService {
       throw Exception('Lỗi ${response.statusCode}: $serverMessage');
     }
 
-    // Parse JSON và trả về List
-    final List<dynamic> jsonList = jsonDecode(response.body) as List<dynamic>;
+    final Map<String, dynamic> responseData = jsonDecode(response.body);
+    final List<dynamic> jsonList = responseData['data'] as List<dynamic>;
     
-    return jsonList.map((item) {
-      final map = item as Map<String, dynamic>;
-      
-      debugPrint("====================================");
-      debugPrint("👉 REPAIR HISTORY ITEM: \n${map.toString()}");
+    return {
+      'data': jsonList.map((item) => item as Map<String, dynamic>).toList(),
+      'meta': responseData['meta']
+    };
+  }
 
-      // Gọi hàm fromMap đã được update an toàn
-      return RepairCase.fromMap(map);
-    }).toList();
+  // Cập nhật lại hàm cũ để không làm hỏng repair_history_screen.dart
+  static Future<List<RepairCase>> getMechanicRepairHistory() async {
+    final res = await getPaginatedHistoryOrders(page: 1, limit: 100, status: 'ALL');
+    final List<dynamic> rawData = res['data'];
+    return rawData.map((item) => RepairCase.fromMap(item as Map<String, dynamic>)).toList();
   }
 
   // ─────────────────────────────────────────────────────────────────

@@ -1229,7 +1229,17 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                         const SizedBox(width: 8),
                         OutlinedButton(
-                          onPressed: _isBooking ? null : () {},
+                          onPressed: _isBooking ? null : () {
+                            setState(() {
+                              if (msg.state != null) {
+                                msg.state!['is_booking_triggered'] = false;
+                                msg.state!['phase'] = 'CANCELLED_BOOKING';
+                                if (msg.state!['risk'] == 'RED') {
+                                  msg.state!['risk'] = 'YELLOW';
+                                }
+                              }
+                            });
+                          },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(
                               color: AppColors.kIdleBorder, // Đổi viền nút từ Trắng mờ sang Xám phân cách rõ ràng

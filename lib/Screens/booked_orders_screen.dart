@@ -6,6 +6,9 @@ import 'package:smart_elec/services/chat_socket_service.dart';
 import 'package:smart_elec/Screens/messenger_chat_screen.dart';
 import '../models/chat_message.dart' as chat_model;
 import '../providers/notification_badge_provider.dart';
+import 'package:smart_elec/Widgets/countdown_timer_widget.dart';
+
+import 'package:smart_elec/Widgets/history_orders_tab.dart';
 
 class AppColors {
   static const Color kPrimaryOrange = Color(0xFFFF7A00);
@@ -20,17 +23,64 @@ class AppColors {
   static const Color kIdleBorder = Color(0xFFD1D5DB);
 }
 
-class BookedOrdersScreen extends StatefulWidget {
+class BookedOrdersScreen extends StatelessWidget {
   const BookedOrdersScreen({super.key});
 
   @override
-  State<BookedOrdersScreen> createState() => _BookedOrdersScreenState();
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: AppColors.kBackground,
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: AppColors.kBackground,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.kTextPrimary, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: const Text(
+            "Đơn đã đặt",
+            style: TextStyle(
+              color: AppColors.kTextPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          bottom: const TabBar(
+            labelColor: AppColors.kPrimaryOrange,
+            unselectedLabelColor: AppColors.kTextSecondary,
+            indicatorColor: AppColors.kPrimaryOrange,
+            tabs: [
+              Tab(text: "Đang diễn ra"),
+              Tab(text: "Lịch sử"),
+            ],
+          ),
+        ),
+        body: const TabBarView(
+          children: [
+            _ActiveOrdersTab(),
+            HistoryOrdersTab(),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _BookedOrdersScreenState extends State<BookedOrdersScreen> {
-  Timer? _timer;
+class _ActiveOrdersTab extends StatefulWidget {
+  const _ActiveOrdersTab({super.key});
+
+  @override
+  State<_ActiveOrdersTab> createState() => _ActiveOrdersTabState();
+}
+
+class _ActiveOrdersTabState extends State<_ActiveOrdersTab> with AutomaticKeepAliveClientMixin {
   bool _isLoading = true;
-  List<Map<String, dynamic>> _liveOrders = []; // Đổi từ mock sang live data
+  List<Map<String, dynamic>> _liveOrders = [];
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -38,26 +88,19 @@ class _BookedOrdersScreenState extends State<BookedOrdersScreen> {
     _fetchOrders();
     _setupSocketListeners();
 
-    // Khi màn hình này mở lên, tự động xóa badge để có user đang đọc rồi
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         Provider.of<NotificationBadgeProvider>(context, listen: false).clear();
       }
     });
-
-    _timer = Timer.periodic(const Duration(seconds: 60), (timer) {
-      if (mounted) setState(() {});
-    });
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     _removeSocketListeners();
     super.dispose();
   }
 
-  // --- KẾT NỐI API VÀ MAP DỮ LIỆU ---
   Future<void> _fetchOrders() async {
     try {
       final List<dynamic> rawData = await ApiService.getActiveRunningSessions();
@@ -66,20 +109,18 @@ class _BookedOrdersScreenState extends State<BookedOrdersScreen> {
 
       setState(() {
         _liveOrders = rawData.map((item) {
-          // Map trạng thái Prisma sang UI
-          String uiStatus = "pending"; // Mặc định là BROADCASTING
+          String uiStatus = "pending";
           if (['MATCHED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS'].contains(item['status'])) {
             uiStatus = "accepted";
           } else if (item['status'] == 'CANCELLED') {
             uiStatus = "cancelled";
           }
 
-          // Lấy tên thiết bị (Ưu tiên từ bảng Device, nếu không có thì lấy chuỗi thiết bị nhập tay)
           String deviceName = item['device'] != null ? item['device']['category'] : (item['deviceType'] ?? "Thiết bị không xác định");
 
           return {
-            "id": "ORD-${item['id']}", // Hiển thị mã đẹp
-            "realId": item['id'], // Giữ ID thật để gọi API tương tác
+            "id": "ORD-${item['id']}", 
+            "realId": item['id'], 
             "device": deviceName,
             "issue": item['symptom'] ?? item['aiSummary'] ?? "Chưa rõ vấn đề",
             "createdAt": DateTime.parse(item['createdAt']).toLocal(),
@@ -93,7 +134,6 @@ class _BookedOrdersScreenState extends State<BookedOrdersScreen> {
         _isLoading = false;
       });
       
-      // Chạy check lại xem có đơn khẩn cấp nào vượt 10p không để hiện popup (dự phòng)
       _checkEmergencyPopup();
 
     } catch (e) {
@@ -102,7 +142,6 @@ class _BookedOrdersScreenState extends State<BookedOrdersScreen> {
     }
   }
 
-  // --- LẮNG NGHE SOCKET THỜI GIAN THỰC ---
   void _setupSocketListeners() {
     final socket = ChatSocketService().socket;
     if (socket == null) return;
@@ -119,12 +158,10 @@ class _BookedOrdersScreenState extends State<BookedOrdersScreen> {
   }
 
   void _onSocketEvent(dynamic data) {
-    // Khi có biến động, gọi lại API để lấy dữ liệu mới nhất cho an toàn và đồng bộ
     debugPrint("Nhận sự kiện Socket, tải lại danh sách đơn...");
     _fetchOrders();
   }
 
-  // --- LOGIC POPUP KHẨN CẤP DỰ PHÒNG ---
   void _checkEmergencyPopup() {
     bool needsUpdate = false;
     for (var order in _liveOrders) {
@@ -181,52 +218,26 @@ class _BookedOrdersScreenState extends State<BookedOrdersScreen> {
     );
   }
 
-  String _getElapsedTime(DateTime createdAt) {
-    final difference = DateTime.now().difference(createdAt);
-    if (difference.inMinutes < 1) return "Vừa xong";
-    if (difference.inMinutes < 60) return "Đã đặt ${difference.inMinutes} phút trước";
-    if (difference.inHours < 24) return "Đã đặt ${difference.inHours} giờ ${difference.inMinutes % 60} phút trước";
-    return "Đã đặt ${difference.inDays} ngày trước";
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.kBackground,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: AppColors.kBackground,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.kTextPrimary, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          "Đơn đã đặt hiện tại",
-          style: TextStyle(
-            color: AppColors.kTextPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.kPrimaryOrange))
-          : _liveOrders.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                  color: AppColors.kPrimaryOrange,
-                  onRefresh: _fetchOrders, // Kéo xuống để tải lại thủ công
-                  child: ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    itemCount: _liveOrders.length,
-                    itemBuilder: (context, index) {
-                      final order = _liveOrders[index];
-                      return _buildOrderCard(order);
-                    },
-                  ),
+    super.build(context);
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator(color: AppColors.kPrimaryOrange))
+        : _liveOrders.isEmpty
+            ? _buildEmptyState()
+            : RefreshIndicator(
+                color: AppColors.kPrimaryOrange,
+                onRefresh: _fetchOrders,
+                child: ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  itemCount: _liveOrders.length,
+                  itemBuilder: (context, index) {
+                    final order = _liveOrders[index];
+                    return _buildOrderCard(order);
+                  },
                 ),
-    );
+              );
   }
 
   Widget _buildEmptyState() {
@@ -432,7 +443,6 @@ class _BookedOrdersScreenState extends State<BookedOrdersScreen> {
           const Spacer(),
           TextButton(
             onPressed: () {
-               // Có thể gọi lại API redispatchJob hoặc về trang chủ
                Navigator.pop(context);
             },
             child: const Text("Đặt lại", style: TextStyle(color: AppColors.kPrimaryOrange, fontSize: 13)),
@@ -441,22 +451,16 @@ class _BookedOrdersScreenState extends State<BookedOrdersScreen> {
       );
     } else {
       return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Icon(Icons.access_time_rounded, color: AppColors.kMutedGrey, size: 16),
-          const SizedBox(width: 6),
-          Text(
-            _getElapsedTime(order["createdAt"]),
-            style: const TextStyle(
-              color: AppColors.kTextSecondary,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
+          CountdownTimerWidget(
+            createdAt: order["createdAt"],
+            isDangerous: order["severity"] == "high",
           ),
-          const Spacer(),
-          Text(
-            "Đang kết nối thợ...",
+          const Text(
+            "Chờ chút nhé...",
             style: TextStyle(
-              color: AppColors.kDarkOrange.withOpacity(0.8),
+              color: AppColors.kTextSecondary,
               fontSize: 13,
               fontStyle: FontStyle.italic,
             ),
