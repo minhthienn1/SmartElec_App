@@ -1070,16 +1070,14 @@ class ApiService {
     }
   }
 
-  /// [RATING] Gửi đánh giá sao + bình luận cho phiên AI chat của KHÁCH — lưu vào DB cho RAG
-  /// Endpoint: POST /ai/sessions/{sessionId}/rating
-  static Future<void> submitAiSessionRating({
+   static Future<bool> submitAiSessionRating({
     required int sessionId,
     required int rating,
     String? comment,
   }) async {
     try {
       final headers = await _getHeaders();
-      await http.post(
+      final response = await http.post(
         Uri.parse('$baseUrl/ai/sessions/$sessionId/rating'),
         headers: headers,
         body: jsonEncode({
@@ -1087,30 +1085,15 @@ class ApiService {
           if (comment != null && comment.trim().isNotEmpty) 'comment': comment.trim(),
         }),
       );
-    } catch (e) {
-      debugPrint('⚠️ submitAiSessionRating lỗi (bỏ qua): $e');
-    }
-  }
 
-  /// [RATING] Gửi đánh giá sao + bình luận cho phiên AI chat của THỢ — lưu vào DB cho RAG
-  /// Endpoint: POST /ai/tech-sessions/{sessionId}/rating
-  static Future<void> submitTechAiRating({
-    required int sessionId,
-    required int rating,
-    String? comment,
-  }) async {
-    try {
-      final headers = await _getHeaders();
-      await http.post(
-        Uri.parse('$baseUrl/ai/tech-sessions/$sessionId/rating'),
-        headers: headers,
-        body: jsonEncode({
-          'rating': rating,
-          if (comment != null && comment.trim().isNotEmpty) 'comment': comment.trim(),
-        }),
-      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return true;
+      }
+      debugPrint('submitAiSessionRating lỗi: ${response.statusCode} ${response.body}');
+      return false;
     } catch (e) {
-      debugPrint('⚠️ submitTechAiRating lỗi (bỏ qua): $e');
+      debugPrint('submitAiSessionRating Exception: $e');
+      return false;
     }
   }
 
@@ -1128,7 +1111,7 @@ class ApiService {
       }
       return [];
     } catch (e) {
-      debugPrint('❌ getTechAiHistory Error: $e');
+      debugPrint('getTechAiHistory Error: $e');
       return [];
     }
   }
@@ -1143,7 +1126,7 @@ class ApiService {
       );
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
-      debugPrint('❌ deleteTechAiHistory Error: $e');
+      debugPrint('deleteTechAiHistory Error: $e');
       return false;
     }
   }
@@ -1204,10 +1187,10 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return true;
       }
-      debugPrint('❌ rateTechAiHistory Error: ${response.body}');
+      debugPrint('rateTechAiHistory Error: ${response.body}');
       return false;
     } catch (e) {
-      debugPrint('❌ rateTechAiHistory Exception: $e');
+      debugPrint('rateTechAiHistory Exception: $e');
       return false;
     }
   }
