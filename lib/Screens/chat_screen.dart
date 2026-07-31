@@ -960,20 +960,30 @@ class _ChatScreenState extends State<ChatScreen> {
               onPressed: _ratingStars == 0
                   ? null
                   : () async {
-                      if (_currentSessionId != null) {
-                        await ApiService.submitAiSessionRating(
-                          sessionId: _currentSessionId!,
-                          rating: _ratingStars,
-                          comment: _ratingCommentController.text,
-                        );
-                      }
-                      if (mounted) {
+                      if (_currentSessionId == null) return;
+
+                      final success = await ApiService.submitAiSessionRating(
+                        sessionId: _currentSessionId!,
+                        rating: _ratingStars,
+                        comment: _ratingCommentController.text,
+                      );
+
+                      if (!mounted) return;
+
+                      if (success) {
                         setState(() => _ratingSubmitted = true);
                         Future.delayed(const Duration(milliseconds: 1500), () {
                           if (mounted) {
                             Navigator.of(context).pop();
                           }
                         });
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Gửi đánh giá thất bại, vui lòng thử lại.'),
+                            backgroundColor: AppColors.kErrorRed,
+                          ),
+                        );
                       }
                     },
               style: ElevatedButton.styleFrom(
