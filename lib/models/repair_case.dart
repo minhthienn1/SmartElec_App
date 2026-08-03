@@ -10,6 +10,7 @@ class RepairCase {
   final String advice;
   final String dangerLevel;
   final bool needMechanic;
+  final String displayStatus; // Trạng thái hiển thị (BOOKED, CONSULTED, CONSULTING, CANCELLED)
 
   // CÁC TRƯỜNG CỦA THỢ
   final String? mechanicName;
@@ -29,6 +30,7 @@ class RepairCase {
     this.advice = '',               
     this.dangerLevel = 'Unknown',   
     this.needMechanic = false,      
+    this.displayStatus = 'CONSULTING',
     this.mechanicName,
     this.mechanicPhone,
     this.rating,
@@ -38,7 +40,6 @@ class RepairCase {
   });
 
   Map<String, dynamic> toMap() {
-    // Giữ nguyên như code của bạn
     return {
       'id': id,
       'title': title,
@@ -49,6 +50,7 @@ class RepairCase {
       'advice': advice,           
       'dangerLevel': dangerLevel,  
       'needMechanic': needMechanic, 
+      'displayStatus': displayStatus,
       'mechanicName': mechanicName,
       'mechanicPhone': mechanicPhone,
       'rating': rating,
@@ -71,10 +73,11 @@ class RepairCase {
       // Phục vụ cho giao diện cũ (AI)
       summary: map['summary'] ?? map['aiSummary'] ?? '',
       status: map['status'] ?? 'UNDER_DIAGNOSIS',
-      symptom: map['symptom'] ?? '',              
+      symptom: (map['symptom'] != null && map['symptom'] != 'null' && map['symptom'].toString().trim().isNotEmpty) ? map['symptom'] : 'Đang xác định vấn đề',              
       advice: map['advice'] ?? 'Chưa có lời khuyên cụ thể.',
       dangerLevel: map['dangerLevel'] ?? 'Chưa xác định',
       needMechanic: map['needMechanic'] ?? false,
+      displayStatus: map['displayStatus'] ?? 'CONSULTING',
       
       // Lấy dữ liệu của Thợ
       mechanicName: map['mechanicName'],

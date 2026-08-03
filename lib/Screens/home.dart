@@ -979,9 +979,24 @@ class RecentRepairSection extends StatelessWidget {
     String statusText = "Đang tư vấn";
     Color statusColor = const Color(0xFF2563EB); 
     
-    if (item.status == "PENDING_TECHNICIAN") {
-      statusText = "Chưa đặt thợ";
-      statusColor = AppColors.kPrimaryOrange; 
+    switch (item.displayStatus) {
+      case 'BOOKED':
+        statusText = "Đã đặt thợ";
+        statusColor = const Color(0xFF10B981); // Xanh lá
+        break;
+      case 'CONSULTED':
+        statusText = "Đã tư vấn";
+        statusColor = AppColors.kPrimaryOrange; // Cam
+        break;
+      case 'CANCELLED':
+        statusText = "Đã hủy";
+        statusColor = AppColors.kErrorRed; // Đỏ
+        break;
+      case 'CONSULTING':
+      default:
+        statusText = "Đang tư vấn";
+        statusColor = const Color(0xFF2563EB); // Xanh dương
+        break;
     }
 
     return GestureDetector(
