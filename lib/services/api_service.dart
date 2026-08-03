@@ -414,7 +414,9 @@ class ApiService {
         // ➕ Lấy trạng thái từ phòng chat (NestJS gửi về) gán vào model
         status: map['status'] as String? ?? 'UNDER_DIAGNOSIS', 
         // ➕ Lấy triệu chứng ban đầu khách nhập gán vào model
-        symptom: map['symptom'] as String? ?? '', 
+        symptom: (map['symptom'] != null && map['symptom'] != 'null' && map['symptom'].toString().trim().isNotEmpty) ? map['symptom'] : 'Đang xác định vấn đề',
+        // ➕ Lấy trạng thái hiển thị
+        displayStatus: map['displayStatus'] as String? ?? 'CONSULTING',
       );
     }).toList();
   }

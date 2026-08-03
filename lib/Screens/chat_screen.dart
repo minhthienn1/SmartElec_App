@@ -596,7 +596,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildContextCard() {
     final ctx = _diagnosisCtx;
-    if (ctx.deviceType == null && ctx.symptom == null) {
+    final isDeviceValid = ctx.deviceType != null && ctx.deviceType!.trim().toLowerCase() != 'null' && ctx.deviceType!.trim().toLowerCase() != 'unknown' && ctx.deviceType!.trim().isNotEmpty;
+    final isSymptomValid = ctx.symptom != null && ctx.symptom!.trim().toLowerCase() != 'null' && ctx.symptom!.trim().toLowerCase() != 'unknown' && ctx.symptom!.trim().isNotEmpty;
+
+    if (!isDeviceValid && !isSymptomValid) {
       return const SizedBox.shrink();
     }
 
@@ -636,14 +639,14 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  ctx.deviceType ?? "Đang xác định thiết bị...",
+                  isDeviceValid ? ctx.deviceType! : "Đang xác định thiết bị...",
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                     color: AppColors.kTextPrimary,
                   ),
                 ),
-                if (ctx.symptom != null && ctx.symptom != 'null' && ctx.symptom!.isNotEmpty) ...[
+                if (isSymptomValid) ...[
                   const SizedBox(height: 2),
                   Text(
                     ctx.symptom!,
@@ -1302,11 +1305,24 @@ class _ChatScreenState extends State<ChatScreen> {
   /// đoán bình thường như không có gì xảy ra.
   Widget _buildRelatedHistoryCard(ChatMessage msg) {
     final related = msg.relatedHistory!;
-    final deviceType = related['deviceType']?.toString() ?? 'thiết bị này';
+
+    final rawDevice = related['deviceType']?.toString();
+    final deviceType = (rawDevice != null &&
+            rawDevice.trim().toLowerCase() != 'null' &&
+            rawDevice.trim().toLowerCase() != 'unknown' &&
+            rawDevice.trim().isNotEmpty)
+        ? rawDevice.trim()
+        : 'thiết bị này';
+
     final brand = related['brand']?.toString();
-    final title = brand != null && brand.trim().isNotEmpty
-        ? '$brand $deviceType'
-        : deviceType;
+    final brandDisplay = (brand != null &&
+            brand.trim().isNotEmpty &&
+            brand.trim().toLowerCase() != 'null' &&
+            brand.trim().toLowerCase() != 'unknown')
+        ? brand.trim()
+        : null;
+
+    final title = brandDisplay != null ? '$brandDisplay $deviceType' : deviceType;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16, left: 42),
@@ -1352,12 +1368,18 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _openRelatedHistory(Map<String, dynamic> related) {
+    final rawDevice = related['deviceType']?.toString();
+    final deviceName = (rawDevice != null && rawDevice.trim().toLowerCase() != 'null' && rawDevice.trim().toLowerCase() != 'unknown' && rawDevice.trim().isNotEmpty) ? rawDevice.trim() : 'Thiết bị';
+    
+    final rawSymptom = related['symptom']?.toString();
+    final symptom = (rawSymptom != null && rawSymptom.trim().toLowerCase() != 'null' && rawSymptom.trim().toLowerCase() != 'unknown' && rawSymptom.trim().isNotEmpty) ? rawSymptom.trim() : '';
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => AiChatSummaryScreen(
-          deviceName: related['deviceType']?.toString() ?? 'Thiết bị',
-          symptom: related['symptom']?.toString() ?? '',
+          deviceName: deviceName,
+          symptom: symptom,
           aiSummary: related['aiSummary']?.toString() ??
               'Chưa có tóm tắt cho phiên chẩn đoán này.',
         ),
