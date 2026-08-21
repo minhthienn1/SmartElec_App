@@ -419,6 +419,7 @@ class _ActiveOrdersTabState extends State<_ActiveOrdersTab> with AutomaticKeepAl
                       phoneNumber: techData != null ? techData['phoneNumber'] : "",
                       averageRating: techData != null && techData['averageRating'] != null ? double.tryParse(techData['averageRating'].toString()) : null,
                       totalReviews: techData != null && techData['totalReviews'] != null ? int.tryParse(techData['totalReviews'].toString()) : null,
+                      completedJobsCount: techData != null && techData['completedJobsCount'] != null ? int.tryParse(techData['completedJobsCount'].toString()) : null,
                     ),
                   ),
                 ),

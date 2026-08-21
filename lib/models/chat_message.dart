@@ -8,6 +8,7 @@ class User {
   final String? phoneNumber;
   final double? averageRating;
   final int? totalReviews;
+  final int? completedJobsCount;
 
   User({
     required this.id,
@@ -17,6 +18,7 @@ class User {
     this.phoneNumber,
     this.averageRating,
     this.totalReviews,
+    this.completedJobsCount,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class User {
       phoneNumber: json['phoneNumber'],
       averageRating: json['averageRating'] != null ? double.tryParse(json['averageRating'].toString()) : null,
       totalReviews: json['totalReviews'] != null ? int.tryParse(json['totalReviews'].toString()) : null,
+      completedJobsCount: json['completedJobsCount'] != null ? int.tryParse(json['completedJobsCount'].toString()) : null,
     );
   }
 }

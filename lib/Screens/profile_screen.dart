@@ -918,7 +918,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // --- CẬP NHẬT NÚT ĐĂNG XUẤT ---
   Widget _buildLogoutButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
@@ -926,10 +925,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         style: OutlinedButton.styleFrom(
           backgroundColor: AppColors.kErrorRed.withOpacity(
             0.05,
-          ), // Nền đỏ lỗi nhạt mới
+          ),
           side: BorderSide(
             color: AppColors.kErrorRed.withOpacity(0.3),
-          ), // Viền đỏ nhẹ mới
+          ),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -939,7 +938,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: const Text(
           "Đăng xuất",
           style: TextStyle(
-            color: AppColors.kErrorRed, // Văn bản màu đỏ lỗi mới
+            color: AppColors.kErrorRed,
             fontSize: 15,
             fontWeight: FontWeight.bold,
           ),
