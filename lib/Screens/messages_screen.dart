@@ -269,6 +269,7 @@ class MessagesScreenState extends State<MessagesScreen> {
                     phoneNumber: otherUser.phoneNumber ?? "", 
                     averageRating: otherUser.averageRating,
                     totalReviews: otherUser.totalReviews,
+                    completedJobsCount: otherUser.completedJobsCount,
                   ),
                 ),
               ),

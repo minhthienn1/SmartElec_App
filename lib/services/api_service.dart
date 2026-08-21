@@ -727,7 +727,7 @@ class ApiService {
   static Future<void> updateFcmToken(
     String fcmToken, {
     String? jwtToken,
-    int timeoutSeconds = 10,
+    int timeoutSeconds = 30,
   }) async {
     try {
       Map<String, String> headers;

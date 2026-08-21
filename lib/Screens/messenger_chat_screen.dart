@@ -1415,7 +1415,7 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
               const SizedBox(height: 12),
               _buildDialogInfoRow(
                 Icons.assignment_turned_in_rounded, 
-                '${widget.receiver.totalReviews ?? 0} đơn hàng'
+                '${widget.receiver.completedJobsCount ?? 0} đơn hàng'
               ),
               const SizedBox(height: 12),
               Row(
@@ -1431,6 +1431,11 @@ class _MessengerChatScreenState extends State<MessengerChatScreen> {
                           text: '${widget.receiver.averageRating?.toStringAsFixed(1) ?? "0.0"} / 5.0',
                           style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.amber),
                         ),
+                        if (widget.receiver.totalReviews != null && widget.receiver.totalReviews! > 0)
+                          TextSpan(
+                            text: ' (${widget.receiver.totalReviews} đánh giá)',
+                            style: const TextStyle(color: Colors.grey, fontSize: 13),
+                          ),
                       ],
                     ),
                   ),
