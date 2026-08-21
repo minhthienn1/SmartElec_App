@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../main.dart';
 import 'api_service.dart';
 import '../providers/notification_badge_provider.dart';
+import '../providers/job_provider.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -101,6 +102,12 @@ class NotificationService {
           title, body,
           message.data['jobId']?.toString() ?? '',
         );
+        
+        // Tự động tải lại danh sách đơn để cập nhật UI ngay lập tức
+        final context = navigatorKey.currentContext;
+        if (context != null) {
+          Provider.of<JobProvider>(context, listen: false).fetchJobs();
+        }
       } else if (type == 'JOB_ACCEPTED' ||
                  type == 'JOB_STATUS_UPDATED' ||
                  type == 'JOB_CANCELLED' ||
