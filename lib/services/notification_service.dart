@@ -8,6 +8,7 @@ import '../main.dart';
 import 'api_service.dart';
 import '../providers/notification_badge_provider.dart';
 import '../providers/job_provider.dart';
+import '../providers/user_provider.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -171,7 +172,15 @@ class NotificationService {
     switch (type) {
       case 'NEW_JOB':
         if (jobId != null) {
-          navigatorKey.currentState?.pushNamed('/job_detail', arguments: jobId);
+          final context = navigatorKey.currentContext;
+          if (context != null) {
+            final userProvider = Provider.of<UserProvider>(context, listen: false);
+            if (userProvider.user?.role == 'TECHNICIAN') {
+              navigatorKey.currentState?.pushNamed('/job_detail', arguments: jobId);
+            } else {
+              debugPrint('⚠️ Đã chặn mở JobDetail vì user hiện tại không phải TECHNICIAN.');
+            }
+          }
         }
         break;
         

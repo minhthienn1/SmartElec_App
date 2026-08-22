@@ -265,6 +265,21 @@ class ApiService {
     }
   }
 
+  static Future<void> logout() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/logout'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 15));
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        debugPrint('⚠️ Lỗi gọi API logout: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ Không thể gọi API logout: $e');
+    }
+  }
+
   static Future<Map<String, dynamic>> zaloLogin({
     required String zaloId,
     String? name,
