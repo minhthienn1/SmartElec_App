@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../main.dart';
 import 'api_service.dart';
 import '../providers/notification_badge_provider.dart';
+import '../providers/job_provider.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -101,6 +102,12 @@ class NotificationService {
           title, body,
           message.data['jobId']?.toString() ?? '',
         );
+        
+        // Tự động tải lại danh sách đơn để cập nhật UI ngay lập tức
+        final context = navigatorKey.currentContext;
+        if (context != null) {
+          Provider.of<JobProvider>(context, listen: false).fetchJobs();
+        }
       } else if (type == 'JOB_ACCEPTED' ||
                  type == 'JOB_STATUS_UPDATED' ||
                  type == 'JOB_CANCELLED' ||
@@ -157,29 +164,36 @@ class NotificationService {
   static void _handleDeepLink(Map<String, dynamic> data) {
     final String? type = data['type'];
     final String? sessionId = data['sessionId']?.toString();
+    final String? jobId = data['jobId']?.toString();
 
-    debugPrint('🔗 DeepLink → type=$type, sessionId=$sessionId');
+    debugPrint('🔗 DeepLink → type=$type, sessionId=$sessionId, jobId=$jobId');
 
-    if (type == 'NEW_JOB' && data['jobId'] != null) {
-      // Thợ bấm vào thông báo đơn mới → nhảy vào màn hình chi tiết đơn
-      navigatorKey.currentState?.pushNamed('/job_detail', arguments: data['jobId'].toString());
-    } else if (type == 'JOB_CANCELLED') {
-      // Đơn bị hủy → nhảy vào màn hình theo dõi đơn (không vào chat trống không)
-      navigatorKey.currentState?.pushNamed('/booked_orders');
-    } else if (sessionId != null && (
-      type == 'JOB_ACCEPTED' ||
-      type == 'JOB_STATUS_UPDATED' ||
-      type == 'QUOTE_UPDATED'
-    )) {
-      // Khách bấm vào thông báo đơn hàng → nhảy vào màn hình chat của đơn đó
-      navigatorKey.currentState?.pushNamed('/messenger_chat', arguments: {
-        'sessionId': int.parse(sessionId),
-      });
-    } else if (type == 'chat' && sessionId != null) {
-      // Tin nhắn thông thường → nhảy vào màn hình chat
-      navigatorKey.currentState?.pushNamed('/messenger_chat', arguments: {
-        'sessionId': int.parse(sessionId),
-      });
+    switch (type) {
+      case 'NEW_JOB':
+        if (jobId != null) {
+          navigatorKey.currentState?.pushNamed('/job_detail', arguments: jobId);
+        }
+        break;
+        
+      case 'JOB_CANCELLED':
+      case 'JOB_EXPIRED':
+        navigatorKey.currentState?.pushNamed('/booked_orders');
+        break;
+
+      case 'JOB_ACCEPTED':
+      case 'JOB_STATUS_UPDATED':
+      case 'QUOTE_UPDATED':
+      case 'chat':
+        if (sessionId != null) {
+          navigatorKey.currentState?.pushNamed('/messenger_chat', arguments: {
+            'sessionId': int.parse(sessionId),
+          });
+        }
+        break;
+        
+      default:
+        debugPrint('⚠️ Push notification không tự động điều hướng cho type: $type');
+        break;
     }
   }
 
