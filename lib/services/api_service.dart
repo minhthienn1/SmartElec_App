@@ -348,7 +348,7 @@ class ApiService {
 
   /// Lưu một phiên chẩn đoán lên server và trả về sessionId.
   /// Gọi API: POST /chats/save
-  static Future<int> saveHistory(RepairCase repairCase) async {
+  static Future<int> saveHistory(RepairCase repairCase, {bool isDangerous = false}) async {
     final headers = await _getHeaders();
     final response = _handleResponse(
       await http.post(
@@ -358,6 +358,7 @@ class ApiService {
           'title': repairCase.title, // Flutter title → Prisma deviceType
           'summary': repairCase.summary, // Flutter summary → Prisma aiSummary
           'sessionType': 'DIRECT_BOOKING', // Đánh dấu là đơn đặt trực tiếp
+          'isDangerous': isDangerous,
         }),
       ),
     );
@@ -376,9 +377,10 @@ class ApiService {
   }
 
   /// Alias cho luồng Gọi thợ nhanh từ trang chủ
-  static Future<int> createQuickSession(String device, String symptom) async {
+  static Future<int> createQuickSession(String device, String symptom, {bool isDangerous = false}) async {
     return saveHistory(
       RepairCase(id: '', title: device, summary: symptom, date: DateTime.now()),
+      isDangerous: isDangerous,
     );
   }
 

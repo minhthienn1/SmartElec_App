@@ -261,7 +261,17 @@ class _JobBoardScreenState extends State<JobBoardScreen>
         final jobs = _filteredJobs(provider.broadcastJobs);
 
         if (jobs.isEmpty) {
-          return _buildEmptyState(provider.broadcastJobs.isEmpty);
+          return RefreshIndicator(
+            onRefresh: provider.fetchJobs,
+            color: _kPrimary,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height - 200,
+                child: _buildEmptyState(provider.broadcastJobs.isEmpty),
+              ),
+            ),
+          );
         }
 
         return RefreshIndicator(

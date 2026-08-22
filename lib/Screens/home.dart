@@ -107,7 +107,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         onConfirm: (device, symptom) async {
           setState(() => _isCreatingEmergencySession = true);
           try {
-            final sessionId = await ApiService.createQuickSession(device, symptom);
+            final sessionId = await ApiService.createQuickSession(device, symptom, isDangerous: true);
 
             if (mounted) {
               showModalBottomSheet(
